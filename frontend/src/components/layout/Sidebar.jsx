@@ -1,56 +1,130 @@
 import {
   CalendarDays,
+  ClipboardList,
   DatabaseBackup,
-  Gauge,
   Hammer,
-  Landmark,
-  Menu,
-  PackageCheck,
-  WalletCards,
+  LayoutDashboard,
+  Package,
+  Wallet,
+  X,
+  LogOut,
 } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { logout } from "../../lib/auth";
 
-const menus = [
-  ["dashboard", "Dashboard", Gauge],
-  ["keuangan", "Keuangan", WalletCards],
-  ["sarpras", "Sarpras", PackageCheck],
-  ["jadwal", "Jadwal DKM", CalendarDays],
-  ["proker", "Proker DKM", Landmark],
-  ["renovasi", "Renovasi", Hammer],
-  ["backup", "Backup", DatabaseBackup],
+const menuItems = [
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/keuangan", label: "Keuangan", icon: Wallet },
+  { to: "/sarpras", label: "Sarpras", icon: Package },
+  { to: "/jadwal-dkm", label: "Jadwal DKM", icon: CalendarDays },
+  { to: "/proker-dkm", label: "Proker DKM", icon: ClipboardList },
+  { to: "/renovasi", label: "Renovasi", icon: Hammer },
+  { to: "/backup", label: "Backup", icon: DatabaseBackup },
 ];
 
-export default function Sidebar({ active, onNavigate }) {
+export default function Sidebar({ isOpen, isMobileOpen, onCloseMobile }) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
+
   return (
-    <aside className="flex h-full min-h-[760px] w-[220px] flex-col rounded-[26px] bg-ink p-4 text-white">
-      <div className="mb-8 flex items-center gap-3 px-2 pt-2">
-        <div className="grid h-9 w-9 place-items-center rounded-full bg-white text-ink font-black">
-          D
-        </div>
-        <div>
-          <p className="text-lg font-black">DKMJNY</p>
-          <p className="text-xs text-white/50">Masjid Digital</p>
-        </div>
-      </div>
-      <nav className="space-y-2">
-        {menus.map(([key, label, Icon]) => (
+    <aside
+      className={[
+        "fixed left-0 top-0 z-50 h-screen w-[280px] bg-ink text-white shadow-2xl transition-all duration-300 ease-in-out",
+        "border-r border-white/10",
+        isOpen ? "lg:w-[280px]" : "lg:w-[88px]",
+        isMobileOpen ? "translate-x-0" : "-translate-x-full",
+        "lg:translate-x-0",
+      ].join(" ")}
+    >
+      <div className="flex h-full min-h-0 flex-col">
+        <div
+          className={[
+            "flex h-20 shrink-0 items-center gap-3 border-b border-white/10 px-5",
+            !isOpen ? "lg:justify-center lg:px-0" : "",
+          ].join(" ")}
+        >
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-limey text-ink">
+            <span className="text-lg font-black">D</span>
+          </div>
+
+          <div className={["min-w-0", !isOpen ? "lg:hidden" : ""].join(" ")}>
+            <h2 className="truncate text-lg font-black">DKMJNY</h2>
+            <p className="truncate text-xs text-white/50">Digital Masjid</p>
+          </div>
+
           <button
-            key={key}
-            onClick={() => onNavigate(key)}
-            className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${active === key ? "bg-limey text-ink" : "text-white/80 hover:bg-white/10"}`}
+            type="button"
+            onClick={onCloseMobile}
+            aria-label="Tutup menu"
+            className="ml-auto flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 transition hover:bg-white/15 lg:hidden"
           >
-            <Icon size={18} />
-            {label}
+            <X size={20} />
           </button>
-        ))}
-      </nav>
-      <div className="mt-auto rounded-3xl bg-limey p-4 text-ink">
-        <div className="mb-3 grid h-10 w-10 place-items-center rounded-full bg-white">
-          <Menu size={18} />
         </div>
-        <p className="text-sm font-black">Admin Panel</p>
-        <p className="text-xs text-black/60">
-          Kelola operasional masjid dengan cepat.
-        </p>
+
+        <nav className="flex-1 space-y-2 overflow-y-auto px-4 py-5">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={onCloseMobile}
+                title={!isOpen ? item.label : undefined}
+                className={({ isActive }) =>
+                  [
+                    "group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-bold transition",
+                    isActive
+                      ? "bg-limey text-ink"
+                      : "text-white/70 hover:bg-white/10 hover:text-white",
+                    !isOpen ? "lg:justify-center lg:px-0" : "",
+                  ].join(" ")
+                }
+              >
+                <Icon size={21} className="shrink-0" />
+                <span
+                  className={["truncate", !isOpen ? "lg:hidden" : ""].join(" ")}
+                >
+                  {item.label}
+                </span>
+              </NavLink>
+            );
+          })}
+        </nav>
+
+        <div className="shrink-0 px-4 py-4">
+          <button
+            type="button"
+            onClick={handleLogout}
+            title={!isOpen ? "Logout" : undefined}
+            className={[
+              "group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-bold transition",
+              "text-white/70 hover:bg-white/10 hover:text-white",
+              !isOpen ? "lg:justify-center lg:px-0" : "",
+            ].join(" ")}
+          >
+            <LogOut size={21} className="shrink-0" />
+            <span
+              className={["truncate", !isOpen ? "lg:hidden" : ""].join(" ")}
+            >
+              Logout
+            </span>
+          </button>
+
+          <div className={["mt-4", !isOpen ? "lg:hidden" : ""].join(" ")}>
+            <div className="w-full rounded-3xl bg-limey p-4 text-ink">
+              <p className="text-sm font-black">DKMJNY Digital</p>
+              <p className="mt-1 text-xs text-ink/70">
+                Kelola masjid lebih cepat dan rapi.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </aside>
   );

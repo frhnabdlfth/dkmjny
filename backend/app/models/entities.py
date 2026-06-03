@@ -1,3 +1,4 @@
+from typing import Optional
 from enum import Enum
 from sqlalchemy import Date, DateTime, Enum as SqlEnum, ForeignKey, Integer, String, Time, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -27,7 +28,7 @@ class KondisiEnum(str, Enum):
 
 class KategoriPetugasEnum(str, Enum):
     LimaWaktu = "5 Waktu"
-    Jumatan = "Jumatan"
+    Jumatan = "Jum'atan"
     IdulFitri = "Idul Fitri"
     IdulAdha = "Idul Adha"
 
@@ -44,10 +45,9 @@ class User(Base):
 
     keuangan = relationship("Keuangan", back_populates="user", cascade="all, delete-orphan")
     sarpras = relationship("Sarpras", back_populates="user", cascade="all, delete-orphan")
-    jadwal = relationship("JadwalDKM", back_populates="user", cascade="all, delete-orphan")
-    proker = relationship("ProkerDKM", back_populates="user", cascade="all, delete-orphan")
+    jadwal_dkm = relationship("JadwalDKM", back_populates="user", cascade="all, delete-orphan")
+    proker_dkm = relationship("ProkerDKM", back_populates="user", cascade="all, delete-orphan")
     renovasi = relationship("Renovasi", back_populates="user", cascade="all, delete-orphan")
-    backups = relationship("Backup", back_populates="user", cascade="all, delete-orphan")
 
 
 class Keuangan(Base):
@@ -75,7 +75,7 @@ class Sarpras(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     barang: Mapped[str] = mapped_column(String(255), nullable=False)
-    kondisi: Mapped[KondisiEnum] = mapped_column(SqlEnum(KondisiEnum), nullable=False)
+    kondisi: Mapped[str] = mapped_column(String(50), nullable=False)
 
     user = relationship("User", back_populates="sarpras")
 
@@ -86,13 +86,13 @@ class JadwalDKM(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     imam: Mapped[str] = mapped_column(String(255), nullable=False)
-    kategori_imam: Mapped[KategoriPetugasEnum] = mapped_column(SqlEnum(KategoriPetugasEnum), nullable=False)
-    khatib: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    kategori_khatib: Mapped[KategoriPetugasEnum | None] = mapped_column(SqlEnum(KategoriPetugasEnum), nullable=True)
-    muadzin: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    kategori_muadzin: Mapped[KategoriPetugasEnum | None] = mapped_column(SqlEnum(KategoriPetugasEnum), nullable=True)
+    kategori_imam: Mapped[str] = mapped_column(String(100), nullable=False)
+    khatib: Mapped[str] = mapped_column(String(255), nullable=False)
+    kategori_khatib: Mapped[str] = mapped_column(String(100), nullable=False)
+    muadzin: Mapped[str] = mapped_column(String(255), nullable=False)
+    kategori_muadzin: Mapped[str] = mapped_column(String(100), nullable=False)
 
-    user = relationship("User", back_populates="jadwal")
+    user = relationship("User", back_populates="jadwal_dkm")
 
 
 class ProkerDKM(Base):
@@ -104,7 +104,7 @@ class ProkerDKM(Base):
     waktu_kegiatan: Mapped[Time] = mapped_column(Time, nullable=False)
     tanggal_kegiatan: Mapped[Date] = mapped_column(Date, nullable=False)
 
-    user = relationship("User", back_populates="proker")
+    user = relationship("User", back_populates="proker_dkm")
 
 
 class Renovasi(Base):
@@ -123,8 +123,5 @@ class Backup(Base):
     __tablename__ = "backups"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     db: Mapped[str] = mapped_column(String(255), nullable=False)
     tanggal: Mapped[Date] = mapped_column(Date, nullable=False)
-
-    user = relationship("User", back_populates="backups")

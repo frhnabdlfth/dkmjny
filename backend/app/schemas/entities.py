@@ -1,3 +1,4 @@
+from typing import Optional
 from datetime import date, datetime, time
 from pydantic import BaseModel, Field, computed_field
 from app.models.entities import JenisPengeluaranEnum, KategoriPetugasEnum, KondisiEnum, RoleEnum
@@ -65,11 +66,11 @@ class SarprasRead(ORMBase, SarprasBase):
 class JadwalBase(BaseModel):
     user_id: int = 1
     imam: str = Field(min_length=2, max_length=255)
-    kategori_imam: KategoriPetugasEnum
-    khatib: str | None = None
-    kategori_khatib: KategoriPetugasEnum | None = None
-    muadzin: str | None = None
-    kategori_muadzin: KategoriPetugasEnum | None = None
+    kategori_imam: str
+    khatib: str = Field(min_length=2, max_length=255)
+    kategori_khatib: str
+    muadzin: str = Field(min_length=2, max_length=255)
+    kategori_muadzin: str
 
 
 class JadwalCreate(JadwalBase):
@@ -77,12 +78,12 @@ class JadwalCreate(JadwalBase):
 
 
 class JadwalUpdate(BaseModel):
-    imam: str | None = None
-    kategori_imam: KategoriPetugasEnum | None = None
-    khatib: str | None = None
-    kategori_khatib: KategoriPetugasEnum | None = None
-    muadzin: str | None = None
-    kategori_muadzin: KategoriPetugasEnum | None = None
+    imam: Optional[str] = Field(default=None, min_length=2, max_length=255)
+    kategori_imam: Optional[str] = None
+    khatib: Optional[str] = Field(default=None, min_length=2, max_length=255)
+    kategori_khatib: Optional[str] = None
+    muadzin: Optional[str] = Field(default=None, min_length=2, max_length=255)
+    kategori_muadzin: Optional[str] = None
 
 
 class JadwalRead(ORMBase, JadwalBase):
@@ -133,6 +134,5 @@ class RenovasiRead(ORMBase, RenovasiBase):
 
 class BackupRead(ORMBase):
     id: int
-    user_id: int
     db: str
     tanggal: date

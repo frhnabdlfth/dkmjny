@@ -1,49 +1,117 @@
-from datetime import date
-from pathlib import Path
 import os
-import subprocess
+from datetime import date, datetime, time
+from decimal import Decimal
+
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy import text
+
 from app.core.config import get_settings
 from app.models.entities import Backup
 
+settings = get_settings()
 
-def create_backup(db: Session, user_id: int = 1) -> Backup:
-    settings = get_settings()
-    backup_dir = Path(settings.backup_dir)
-    backup_dir.mkdir(parents=True, exist_ok=True)
-    filename = f"db_dkmjny_{date.today().isoformat()}.sql"
-    output_path = backup_dir / filename
 
-    # Simple mysqldump support for local/dev servers. In production, run with least-privileged DB user.
-    database_url = settings.database_url.replace("mysql+pymysql://", "")
-    auth_host, database_name = database_url.rsplit("/", 1)
-    auth, host_port = auth_host.split("@")
-    username, password = auth.split(":", 1)
-    host, port = host_port.split(":") if ":" in host_port else (host_port, "3306")
+def _sql_value(value):
+    if value is None:
+        return "NULL"
 
-    command = [settings.mysqldump_path, "-h", host, "-P", port, "-u", username]
-    if password:
-        command.append(f"-p{password}")
-    command.append(database_name)
+    if isinstance(value, datetime):
+        return f"'{value.strftime('%Y-%m-%d %H:%M:%S')}'"
 
+    if isinstance(value, date):
+        return f"'{value.strftime('%Y-%m-%d')}'"
+
+    if isinstance(value, time):
+        return f"'{value.strftime('%H:%M:%S')}'"
+
+    if isinstance(value, Decimal):
+        return str(value)
+
+    if isinstance(value, (int, float)):
+        return str(value)
+
+    escaped = str(value).replace("\\", "\\\\").replace("'", "''")
+    return f"'{escaped}'"
+
+
+def create_backup(db):
     try:
-        with output_path.open("w", encoding="utf-8") as handle:
-            subprocess.run(command, stdout=handle, stderr=subprocess.PIPE, check=True, text=True)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Backup gagal: {exc}") from exc
+        os.makedirs(settings.backup_dir, exist_ok=True)
 
-    item = Backup(user_id=user_id, db=filename, tanggal=date.today())
-    db.add(item)
-    db.commit()
-    db.refresh(item)
-    return item
+        now = datetime.now()
+        filename = f"{settings.database_name}_{now.strftime('%Y%m%d_%H%M%S')}.sql"
+        filepath = os.path.join(settings.backup_dir, filename)
 
+        tables_result = db.execute(text("SHOW TABLES"))
+        tables = [row[0] for row in tables_result.fetchall()]
 
-def delete_backup_file(db: Session, item: Backup) -> None:
-    settings = get_settings()
-    file_path = Path(settings.backup_dir) / item.db
-    if file_path.exists():
-        os.remove(file_path)
-    db.delete(item)
-    db.commit()
+        with open(filepath, "w", encoding="utf-8") as file:
+            file.write(f"-- Backup database: {settings.database_name}\n")
+            file.write(f"-- Created at: {now.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+            file.write("SET FOREIGN_KEY_CHECKS=0;\n\n")
+
+            for table in tables:
+                create_table_result = db.execute(text(f"SHOW CREATE TABLE `{table}`"))
+                create_table_row = create_table_result.fetchone()
+
+                if not create_table_row:
+                    continue
+
+                create_table_sql = create_table_row[1]
+
+                file.write(f"DROP TABLE IF EXISTS `{table}`;\n")
+                file.write(f"{create_table_sql};\n\n")
+
+                rows_result = db.execute(text(f"SELECT * FROM `{table}`"))
+                rows = rows_result.fetchall()
+                columns = list(rows_result.keys())
+
+                if not rows:
+                    continue
+
+                column_names = ", ".join([f"`{column}`" for column in columns])
+
+                for row in rows:
+                    values = ", ".join([_sql_value(value) for value in row])
+                    file.write(
+                        f"INSERT INTO `{table}` ({column_names}) VALUES ({values});\n"
+                    )
+
+                file.write("\n")
+
+            file.write("SET FOREIGN_KEY_CHECKS=1;\n")
+
+        backup = Backup(
+            db=settings.database_name,
+            tanggal=now.date(),
+        )
+
+        db.add(backup)
+        db.commit()
+        db.refresh(backup)
+
+        return backup
+
+    except Exception as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"{type(error).__name__}: {str(error)}",
+        )
+    
+def delete_backup_file(db, backup):
+    try:
+        db.delete(backup)
+        db.commit()
+
+        return {
+            "message": "Backup berhasil dihapus",
+            "id": backup.id,
+        }
+
+    except Exception as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"{type(error).__name__}: {str(error)}",
+        )

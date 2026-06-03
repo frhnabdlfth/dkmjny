@@ -4,73 +4,119 @@ import Modal from "../ui/Modal";
 export default function ResourceFormModal({
   open,
   title,
-  fields,
-  initialData,
+  fields = [],
+  initialData = null,
   onClose,
   onSubmit,
+  loading = false,
 }) {
   const [form, setForm] = useState({});
+
   useEffect(() => {
     const base = Object.fromEntries(
       fields.map((field) => [field.name, field.defaultValue ?? ""]),
     );
-    setForm({ ...base, ...(initialData || {}) });
+
+    setForm({
+      ...base,
+      ...(initialData || {}),
+      user_id: initialData?.user_id ?? 1,
+    });
   }, [fields, initialData, open]);
+
+  const visibleFields = fields.filter((field) => field.name !== "user_id");
+
+  const handleChange = (event) => {
+    const { name, value, type } = event.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "number" ? Number(value) : value,
+    }));
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    await onSubmit(form);
+
+    await onSubmit({
+      ...form,
+      user_id: form.user_id ?? 1,
+    });
+
     onClose();
   };
 
   return (
     <Modal open={open} title={title} onClose={onClose}>
-      <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit}>
-        {fields.map((field) => (
-          <label key={field.name} className={field.full ? "sm:col-span-2" : ""}>
-            <span className="label mb-1 block">{field.label}</span>
-            {field.type === "select" ? (
-              <select
-                className="input"
-                value={form[field.name] ?? ""}
-                onChange={(e) =>
-                  setForm({ ...form, [field.name]: e.target.value })
-                }
-                required={field.required}
-              >
-                <option value="">Pilih</option>
-                {field.options.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                className="input"
-                type={field.type || "text"}
-                value={form[field.name] ?? ""}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    [field.name]:
-                      field.type === "number"
-                        ? Number(e.target.value)
-                        : e.target.value,
-                  })
-                }
-                required={field.required}
-                min={field.min}
-                max={field.max}
-              />
-            )}
-          </label>
-        ))}
-        <div className="sm:col-span-2 flex justify-end gap-2 pt-2">
-          <button type="button" className="btn-ghost" onClick={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {visibleFields.map((field) => {
+          const value = form[field.name] ?? "";
+
+          return (
+            <label key={field.name} className="block">
+              <span className="mb-2 block text-sm font-bold text-ink">
+                {field.label}
+              </span>
+
+              {field.type === "select" ? (
+                <select
+                  name={field.name}
+                  value={value}
+                  onChange={handleChange}
+                  required={field.required}
+                  className="input"
+                >
+                  <option value="">Pilih {field.label}</option>
+
+                  {field.options?.map((option) => {
+                    const optionValue =
+                      typeof option === "object" ? option.value : option;
+                    const optionLabel =
+                      typeof option === "object" ? option.label : option;
+
+                    return (
+                      <option key={optionValue} value={optionValue}>
+                        {optionLabel}
+                      </option>
+                    );
+                  })}
+                </select>
+              ) : field.type === "textarea" ? (
+                <textarea
+                  name={field.name}
+                  value={value}
+                  onChange={handleChange}
+                  required={field.required}
+                  rows={4}
+                  className="input min-h-28 resize-y"
+                  placeholder={field.placeholder || field.label}
+                />
+              ) : (
+                <input
+                  type={field.type || "text"}
+                  name={field.name}
+                  value={value}
+                  onChange={handleChange}
+                  required={field.required}
+                  min={field.min}
+                  max={field.max}
+                  step={field.step}
+                  className="input"
+                  placeholder={field.placeholder || field.label}
+                />
+              )}
+            </label>
+          );
+        })}
+
+        <div className="flex flex-col-reverse gap-2 pt-3 sm:flex-row sm:justify-end">
+          <button type="button" onClick={onClose} className="btn-ghost">
             Batal
           </button>
-          <button className="btn-primary">Simpan</button>
+
+          <button type="submit" disabled={loading} className="btn-primary">
+            {loading ? "Menyimpan..." : "Simpan"}
+          </button>
         </div>
       </form>
     </Modal>
