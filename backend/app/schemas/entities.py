@@ -1,7 +1,7 @@
 from typing import Optional
 from datetime import date, datetime, time
 from pydantic import BaseModel, Field, computed_field
-from app.models.entities import JenisPengeluaranEnum, KategoriPetugasEnum, KondisiEnum, RoleEnum
+from app.models.entities import KategoriPetugasEnum, KondisiEnum, RoleEnum
 from app.schemas.common import ORMBase
 
 
@@ -15,10 +15,10 @@ class UserRead(ORMBase):
 
 class KeuanganBase(BaseModel):
     user_id: int = 1
-    saldo_awal: int = Field(default=0, ge=0)
     pemasukan: int = Field(default=0, ge=0)
     pengeluaran: int = Field(default=0, ge=0)
-    jenis_pengeluaran: JenisPengeluaranEnum | None = None
+    jenis_pengeluaran: str | None = None
+    jenis_pemasukan: str | None = None
     tanggal: date
 
 
@@ -27,21 +27,22 @@ class KeuanganCreate(KeuanganBase):
 
 
 class KeuanganUpdate(BaseModel):
-    saldo_awal: int | None = Field(default=None, ge=0)
     pemasukan: int | None = Field(default=None, ge=0)
     pengeluaran: int | None = Field(default=None, ge=0)
-    jenis_pengeluaran: JenisPengeluaranEnum | None = None
+    jenis_pengeluaran: str | None = None
+    jenis_pemasukan: str | None = None
     tanggal: date | None = None
 
 
-class KeuanganRead(ORMBase, KeuanganBase):
+class KeuanganRead(ORMBase):
     id: int
+    user_id: int
+    pemasukan: int
+    pengeluaran: int
+    jenis_pengeluaran: str | None = None
+    jenis_pemasukan: str | None = None
+    tanggal: date
     created_at: datetime
-
-    @computed_field
-    @property
-    def saldo_akhir(self) -> int:
-        return int(self.saldo_awal or 0) + int(self.pemasukan or 0) - int(self.pengeluaran or 0)
 
 
 class SarprasBase(BaseModel):

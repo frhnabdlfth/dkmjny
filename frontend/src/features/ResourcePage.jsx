@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+import { Plus, Eye, SquarePen, Trash2 } from "lucide-react";
+
+import { useMemo, useState, forwardRef, useImperativeHandle } from "react";
 import PageTitle from "../components/ui/PageTitle";
 import DataTable from "../components/ui/DataTable";
 import ResourceFormModal from "../components/modals/ResourceFormModal";
@@ -6,35 +8,65 @@ import DeleteModal from "../components/modals/DeleteModal";
 import ViewModal from "../components/modals/ViewModal";
 import { useCrud } from "../hooks/useCrud";
 
-export default function ResourcePage({
-  title,
-  subtitle,
-  path,
-  columns,
-  fields,
-  labelKey,
-  canView = false,
-}) {
+const ResourcePage = forwardRef(function ResourcePage(
+  {
+    title,
+    subtitle,
+    path,
+    columns,
+    fields,
+    labelKey,
+    canView = false,
+    onBackClick,
+    tipeTransaksi,
+    onBeforeCreate,
+    onBeforeEdit,
+    onBeforeView,
+    viewColumns,
+    renderHeader,
+  },
+  ref,
+) {
   const { items, loading, createItem, updateItem, removeItem } = useCrud(path);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [selected, setSelected] = useState(null);
+
+  useImperativeHandle(ref, () => ({
+    openForm: (data = null) => {
+      setSelected(data);
+      setFormOpen(true);
+    },
+    openView: (data = null) => {
+      setSelected(data);
+      setViewOpen(true);
+    },
+  }));
+
   const viewFields = useMemo(
     () =>
-      columns.map((col) => ({
+      (viewColumns || columns).map((col) => ({
         key: col.key,
         label: col.label,
         render: col.render,
       })),
-    [columns],
+    [columns, viewColumns],
   );
 
   const openCreate = () => {
+    if (onBeforeCreate) {
+      onBeforeCreate();
+      return;
+    }
     setSelected(null);
     setFormOpen(true);
   };
   const openEdit = (row) => {
+    if (onBeforeEdit) {
+      onBeforeEdit(row);
+      return;
+    }
     setSelected(row);
     setFormOpen(true);
   };
@@ -43,6 +75,10 @@ export default function ResourcePage({
     setDeleteOpen(true);
   };
   const openView = (row) => {
+    if (onBeforeView) {
+      onBeforeView(row);
+      return;
+    }
     setSelected(row);
     setViewOpen(true);
   };
@@ -52,30 +88,36 @@ export default function ResourcePage({
       <PageTitle
         title={title}
         subtitle={subtitle}
+        onBack={onBackClick}
         action={
           <button className="btn-primary" onClick={openCreate}>
-            + Tambah
+            <Plus size={20} />
+            Tambah
           </button>
         }
       />
+      {renderHeader && renderHeader(items)}
       <DataTable
         loading={loading}
         data={items}
         columns={columns}
         actions={(row) => (
-          <>
+          <div className="flex items-center gap-1">
             {canView && (
               <button className="btn-ghost !py-2" onClick={() => openView(row)}>
-                Lihat
+                <Eye size={20} />
+                <span className="hidden sm:inline">Lihat</span>
               </button>
             )}
             <button className="btn-ghost !py-2" onClick={() => openEdit(row)}>
-              Edit
+              <SquarePen size={20} />
+              <span className="hidden sm:inline">Edit</span>
             </button>
             <button className="btn-dark !py-2" onClick={() => openDelete(row)}>
-              Hapus
+              <Trash2 size={20} />
+              <span className="hidden sm:inline">Hapus</span>
             </button>
-          </>
+          </div>
         )}
       />
       <ResourceFormModal
@@ -106,4 +148,6 @@ export default function ResourcePage({
       />
     </>
   );
-}
+});
+
+export default ResourcePage;

@@ -13,13 +13,6 @@ class RoleEnum(str, Enum):
     Sekretaris = "Sekretaris"
 
 
-class JenisPengeluaranEnum(str, Enum):
-    Jasa = "Jasa"
-    Belanja = "Belanja"
-    Renovasi = "Renovasi"
-    Lainnya = "Lainnya"
-
-
 class KondisiEnum(str, Enum):
     Bagus = "Bagus"
     Rusak = "Rusak"
@@ -55,18 +48,14 @@ class Keuangan(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    saldo_awal: Mapped[int] = mapped_column(Integer, default=0)
     pemasukan: Mapped[int] = mapped_column(Integer, default=0)
     pengeluaran: Mapped[int] = mapped_column(Integer, default=0)
-    jenis_pengeluaran: Mapped[JenisPengeluaranEnum | None] = mapped_column(SqlEnum(JenisPengeluaranEnum), nullable=True)
+    jenis_pengeluaran: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    jenis_pemasukan: Mapped[str | None] = mapped_column(String(50), nullable=True)
     tanggal: Mapped[Date] = mapped_column(Date, nullable=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
 
     user = relationship("User", back_populates="keuangan")
-
-    @property
-    def saldo_akhir(self) -> int:
-        return int(self.saldo_awal or 0) + int(self.pemasukan or 0) - int(self.pengeluaran or 0)
 
 
 class Sarpras(Base):

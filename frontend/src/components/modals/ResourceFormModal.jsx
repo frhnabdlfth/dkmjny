@@ -17,14 +17,26 @@ export default function ResourceFormModal({
       fields.map((field) => [field.name, field.defaultValue ?? ""]),
     );
 
-    setForm({
+    const merged = {
       ...base,
-      ...(initialData || {}),
       user_id: initialData?.user_id ?? 1,
-    });
+    };
+
+    // Merge initialData, converting null values to appropriate defaults
+    if (initialData) {
+      Object.keys(initialData).forEach((key) => {
+        const value = initialData[key];
+        merged[key] =
+          value !== null && value !== undefined ? value : (merged[key] ?? "");
+      });
+    }
+
+    setForm(merged);
   }, [fields, initialData, open]);
 
-  const visibleFields = fields.filter((field) => field.name !== "user_id");
+  const visibleFields = fields.filter(
+    (field) => field.name !== "user_id" && !field.hidden,
+  );
 
   const handleChange = (event) => {
     const { name, value, type } = event.target;

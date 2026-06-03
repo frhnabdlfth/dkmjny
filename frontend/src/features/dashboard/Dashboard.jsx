@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
-  Hammer,
+  DollarSign,
   PackageCheck,
   PackageX,
   Wrench,
@@ -26,6 +26,13 @@ const cardMotion = {
   hidden: { opacity: 0, y: 18 },
   show: { opacity: 1, y: 0 },
 };
+
+const money = (v) =>
+  new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(v || 0);
 
 function parseDate(dateString) {
   if (!dateString) return null;
@@ -89,7 +96,9 @@ function StatCard({ icon: Icon, title, value, tone = "bg-limey", delay = 0 }) {
       whileHover={{ y: -4 }}
       className="card p-4 sm:p-5"
     >
-      <div className={`mb-4 grid h-12 w-12 place-items-center rounded-2xl ${tone}`}>
+      <div
+        className={`mb-4 grid h-12 w-12 place-items-center rounded-2xl ${tone}`}
+      >
         <Icon size={20} />
       </div>
       <p className="text-sm text-black/50">{title}</p>
@@ -167,7 +176,10 @@ function RealCalendar({ schedules = [] }) {
   const [activeDate, setActiveDate] = useState(today);
   const [selectedDate, setSelectedDate] = useState(null);
 
-  const calendarDays = useMemo(() => buildCalendarDays(activeDate), [activeDate]);
+  const calendarDays = useMemo(
+    () => buildCalendarDays(activeDate),
+    [activeDate],
+  );
 
   const eventsByDate = useMemo(() => {
     return schedules.reduce((acc, item) => {
@@ -188,11 +200,15 @@ function RealCalendar({ schedules = [] }) {
     : [];
 
   const goToPreviousMonth = () => {
-    setActiveDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    setActiveDate(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
+    );
   };
 
   const goToNextMonth = () => {
-    setActiveDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    setActiveDate(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
+    );
   };
 
   const isSameDate = (firstDate, secondDate) => {
@@ -264,7 +280,9 @@ function RealCalendar({ schedules = [] }) {
                   isToday ? "font-black ring-2 ring-ink/20" : "",
                   !hasEvent ? "cursor-default" : "cursor-pointer",
                 ].join(" ")}
-                title={hasEvent ? "Klik untuk lihat detail kegiatan" : undefined}
+                title={
+                  hasEvent ? "Klik untuk lihat detail kegiatan" : undefined
+                }
               >
                 {date.getDate()}
 
@@ -305,6 +323,20 @@ export default function Dashboard() {
   };
 
   const schedules = data?.schedules || [];
+
+  const financeSummary = useMemo(() => {
+    const chart = data?.finance_chart || [];
+    const totalPemasukan = chart.reduce(
+      (sum, item) => sum + (item.pemasukan || 0),
+      0,
+    );
+    const totalPengeluaran = chart.reduce(
+      (sum, item) => sum + (item.pengeluaran || 0),
+      0,
+    );
+    const sisaSaldo = totalPemasukan - totalPengeluaran;
+    return { totalPemasukan, totalPengeluaran, sisaSaldo };
+  }, [data?.finance_chart]);
 
   return (
     <motion.div
@@ -415,14 +447,22 @@ export default function Dashboard() {
           initial="hidden"
           animate="show"
           transition={{ duration: 0.35, delay: 0.3 }}
-          className="card hidden bg-ink p-5 text-white lg:block"
+          className={`card hidden p-5 text-black lg:block ${
+            financeSummary.sisaSaldo >= 0 ? "bg-limey" : "bg-orange-600"
+          }`}
         >
-          <div className="mb-3 grid h-11 w-11 place-items-center rounded-2xl bg-limey text-ink">
-            <Hammer size={20} />
+          <div className="mb-3 grid h-11 w-11 place-items-center rounded-2xl bg-ink text-gray-50">
+            <DollarSign size={20} />
           </div>
-          <h3 className="text-xl font-black">DKMJNY Digital</h3>
-          <p className="mt-2 text-sm text-white/60">
-            Manajemen masjid terpusat untuk admin.
+          <h3 className="text-xl font-black">Sisa Saldo</h3>
+          <p className="text-2xl font-black">
+            {money(financeSummary.sisaSaldo)}
+          </p>
+          <p className="mt-3 text-xs text-ink">
+            Masuk: {money(financeSummary.totalPemasukan)}
+          </p>
+          <p className="text-xs text-ink">
+            Keluar: {money(financeSummary.totalPengeluaran)}
           </p>
         </motion.div>
 
