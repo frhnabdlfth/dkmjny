@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.routes import router
 from app.core.config import get_settings
@@ -15,6 +17,12 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+app.mount(
+    "/storage",
+    StaticFiles(directory="storage"),
+    name="storage"
 )
 
 @app.get("/")

@@ -53,6 +53,7 @@ class Keuangan(Base):
     jenis_pengeluaran: Mapped[str | None] = mapped_column(String(50), nullable=True)
     jenis_pemasukan: Mapped[str | None] = mapped_column(String(50), nullable=True)
     tanggal: Mapped[Date] = mapped_column(Date, nullable=False)
+    deskripsi: Mapped[str] = mapped_column(String(255), nullable=True, index=True)
     created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
 
     user = relationship("User", back_populates="keuangan")
@@ -63,6 +64,7 @@ class Sarpras(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    foto: Mapped[str] = mapped_column(String(255), nullable=True)
     barang: Mapped[str] = mapped_column(String(255), nullable=False)
     kondisi: Mapped[str] = mapped_column(String(50), nullable=False)
 

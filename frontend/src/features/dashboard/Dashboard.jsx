@@ -338,6 +338,24 @@ export default function Dashboard() {
     return { totalPemasukan, totalPengeluaran, sisaSaldo };
   }, [data?.finance_chart]);
 
+  const [hiddenCharts, setHiddenCharts] = useState([]);
+
+  const handleLegendClick = (key) => {
+    setHiddenCharts((prev) =>
+      prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key],
+    );
+  };
+
+  const formatTanggal = (tanggal) => {
+    if (!tanggal) return "-";
+
+    return new Intl.DateTimeFormat("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(new Date(tanggal));
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -357,14 +375,14 @@ export default function Dashboard() {
             icon={PackageX}
             title="Barang Rusak"
             value={summary.rusak}
-            tone="bg-red-100"
+            tone="bg-red-200"
             delay={0.1}
           />
           <StatCard
             icon={Wrench}
             title="Harus Diperbaiki"
             value={summary.perlu_diperbaiki}
-            tone="bg-orange-100"
+            tone="bg-orange-200"
             delay={0.15}
           />
         </div>
@@ -387,15 +405,74 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={data?.finance_chart || []}
-                margin={{ left: -20, right: 10 }}
+                margin={{ left: -10, right: -1 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="tanggal" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Legend />
-                <Bar dataKey="pemasukan" />
-                <Bar dataKey="pengeluaran" />
+                <Legend
+                  content={() => (
+                    <div className="mt-4 flex items-center justify-center gap-4">
+                      <button
+                        type="button"
+                        onClick={() => handleLegendClick("pemasukan")}
+                        className="flex items-center gap-2"
+                      >
+                        <span className="h-3 w-3 bg-[#c6f432]" />
+                        <span
+                          style={{
+                            color: "#000",
+                            textDecoration: hiddenCharts.includes("pemasukan")
+                              ? "line-through"
+                              : "none",
+                            opacity: hiddenCharts.includes("pemasukan")
+                              ? 0.5
+                              : 1,
+                          }}
+                        >
+                          pemasukan
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleLegendClick("pengeluaran")}
+                        className="flex items-center gap-2"
+                      >
+                        <span className="h-3 w-3 bg-[#991B1B]" />
+                        <span
+                          style={{
+                            color: "#000",
+                            textDecoration: hiddenCharts.includes("pengeluaran")
+                              ? "line-through"
+                              : "none",
+                            opacity: hiddenCharts.includes("pengeluaran")
+                              ? 0.5
+                              : 1,
+                          }}
+                        >
+                          pengeluaran
+                        </span>
+                      </button>
+                    </div>
+                  )}
+                />
+                {!hiddenCharts.includes("pemasukan") && (
+                  <Bar
+                    dataKey="pemasukan"
+                    fill="#c6f432"
+                    radius={[6, 6, 0, 0]}
+                  />
+                )}
+
+                {!hiddenCharts.includes("pengeluaran") && (
+                  <Bar
+                    dataKey="pengeluaran"
+                    fill="#991B1B"
+                    radius={[6, 6, 0, 0]}
+                  />
+                )}
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -411,27 +488,30 @@ export default function Dashboard() {
           <h2 className="mb-4 font-black text-ink">Progress Renovasi</h2>
 
           <div className="space-y-4">
-            {(data?.renovations || []).length ? (
-              data.renovations.map((item, index) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.25, delay: 0.05 * index }}
-                  className="flex flex-col gap-3 rounded-2xl bg-black/[0.02] p-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0">
-                    <p className="break-words font-bold text-ink">
-                      {item.jenis_perbaikan}
-                    </p>
-                    <p className="text-xs text-black/50">
-                      {item.tanggal_perbaikan}
-                    </p>
-                  </div>
+            {(data?.renovations || []).filter((item) => item.progress < 100)
+              .length ? (
+              data.renovations
+                .filter((item) => item.progress < 100)
+                .map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.25, delay: 0.05 * index }}
+                    className="flex flex-col gap-3 rounded-2xl bg-black/[0.02] p-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="break-words font-bold text-ink">
+                        {item.jenis_perbaikan}
+                      </p>
+                      <p className="text-xs text-black/50">
+                        {formatTanggal(item.tanggal_perbaikan)}
+                      </p>
+                    </div>
 
-                  <ProgressBar value={item.progress} />
-                </motion.div>
-              ))
+                    <ProgressBar value={item.progress} />
+                  </motion.div>
+                ))
             ) : (
               <p className="rounded-2xl bg-black/[0.02] p-4 text-sm text-black/50">
                 Belum ada data renovasi.

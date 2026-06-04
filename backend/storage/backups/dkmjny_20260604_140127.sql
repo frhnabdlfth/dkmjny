@@ -1,5 +1,5 @@
 -- Backup database: dkmjny
--- Created at: 2026-06-03 20:36:19
+-- Created at: 2026-06-04 14:01:27
 
 SET FOREIGN_KEY_CHECKS=0;
 
@@ -9,7 +9,7 @@ CREATE TABLE `backups` (
   `db` varchar(255) NOT NULL,
   `tanggal` date NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `jadwal_dkm`;
 CREATE TABLE `jadwal_dkm` (
@@ -43,7 +43,7 @@ CREATE TABLE `keuangan` (
   CONSTRAINT `fk_keuangan_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-INSERT INTO `keuangan` (`id`, `user_id`, `pemasukan`, `jenis_pemasukan`, `pengeluaran`, `jenis_pengeluaran`, `tanggal`, `created_at`) VALUES (6, 1, 100000, 'Amal', 0, '', '2026-06-03', '2026-06-03 19:53:09');
+INSERT INTO `keuangan` (`id`, `user_id`, `pemasukan`, `jenis_pemasukan`, `pengeluaran`, `jenis_pengeluaran`, `tanggal`, `created_at`) VALUES (6, 1, 100000, 'Amal', 0, '', '2026-06-04', '2026-06-03 19:53:09');
 INSERT INTO `keuangan` (`id`, `user_id`, `pemasukan`, `jenis_pemasukan`, `pengeluaran`, `jenis_pengeluaran`, `tanggal`, `created_at`) VALUES (7, 1, 0, '', 100000, 'Belanja', '2026-06-03', '2026-06-03 19:53:20');
 INSERT INTO `keuangan` (`id`, `user_id`, `pemasukan`, `jenis_pemasukan`, `pengeluaran`, `jenis_pengeluaran`, `tanggal`, `created_at`) VALUES (8, 1, 20000, 'Sedekah', 0, '', '2026-06-03', '2026-06-03 20:04:53');
 INSERT INTO `keuangan` (`id`, `user_id`, `pemasukan`, `jenis_pemasukan`, `pengeluaran`, `jenis_pengeluaran`, `tanggal`, `created_at`) VALUES (9, 1, 2000000, 'Infaq', 0, '', '2026-06-03', '2026-06-03 20:05:13');

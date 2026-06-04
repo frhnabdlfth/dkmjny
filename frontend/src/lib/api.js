@@ -9,11 +9,18 @@ export async function listResource(path) {
 }
 
 export async function createResource(path, payload) {
-  return (await api.post(path, payload)).data;
+  const isFormData = payload instanceof FormData;
+  return (await api.post(path, payload, {
+    headers: isFormData ? { "Content-Type": "multipart/form-data" } : {},
+  })).data;
 }
 
 export async function updateResource(path, id, payload) {
-  return (await api.put(`${path}/${id}`, payload)).data;
+  const isFormData = payload instanceof FormData;
+
+  return (await api.put(`${path}/${id}`, payload, {
+    headers: isFormData ? { "Content-Type": "multipart/form-data" } : {},
+  })).data;
 }
 
 export async function deleteResource(path, id) {

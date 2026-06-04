@@ -17,13 +17,13 @@ export default function DataTable({ columns, data, actions, loading }) {
         <table className="min-w-full divide-y divide-black/5">
           <thead className="bg-black/[0.02]">
             <tr>
-              <th className="table-th text-nowrap text-center w-10">No</th>
+              <th className="table-th text-nowrap text-center w-10 text-ink">No</th>
               {columns.map((col) => (
-                <th key={col.key} className="table-th text-nowrap">
+                <th key={col.key} className="table-th text-nowrap text-ink">
                   {col.label}
                 </th>
               ))}
-              {actions && <th className="table-th text-nowrap">Aksi</th>}
+              {actions && <th className="table-th text-nowrap text-ink">Aksi</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-black/5">

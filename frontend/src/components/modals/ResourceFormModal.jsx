@@ -22,7 +22,6 @@ export default function ResourceFormModal({
       user_id: initialData?.user_id ?? 1,
     };
 
-    // Merge initialData, converting null values to appropriate defaults
     if (initialData) {
       Object.keys(initialData).forEach((key) => {
         const value = initialData[key];
@@ -38,23 +37,65 @@ export default function ResourceFormModal({
     (field) => field.name !== "user_id" && !field.hidden,
   );
 
+  const formatRupiah = (value) => {
+    if (!value) return "";
+
+    const numberString = value.toString().replace(/[^,\d]/g, "");
+    const split = numberString.split(",");
+    const sisa = split[0].length % 3;
+    let rupiah = split[0].substr(0, sisa);
+    const ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+    if (ribuan) {
+      const separator = sisa ? "." : "";
+      rupiah += separator + ribuan.join(".");
+    }
+
+    return split[1] !== undefined ? rupiah + "," + split[1] : rupiah;
+  };
+
+  const parseRupiah = (value) => {
+    return value.replace(/\./g, "").replace(/,/g, "");
+  };
+
   const handleChange = (event) => {
-    const { name, value, type } = event.target;
+    const { name, value, dataset, type, files } = event.target;
+
+    if (dataset.type === "currency") {
+      setForm((prev) => ({
+        ...prev,
+        [name]: parseRupiah(value),
+      }));
+      return;
+    }
 
     setForm((prev) => ({
       ...prev,
-      [name]: type === "number" ? Number(value) : value,
+      [name]: type === "file" ? files[0] : value,
     }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    const hasFile = fields.some((f) => f.type === "file");
 
-    await onSubmit({
-      ...form,
-      user_id: form.user_id ?? 1,
-    });
+    if (hasFile) {
+      const formData = new FormData();
+      Object.entries(form).forEach(([key, value]) => {
+        if (value === undefined || value === null) return;
+        const isFileField = fields.find((f) => f.name === key)?.type === "file";
+        if (isFileField && !(value instanceof File)) return;
+        formData.append(key, value);
+      });
 
+      for (let [k, v] of formData.entries()) {
+        console.log(k, v);
+      }
+
+      await onSubmit(formData);
+    } else {
+      await onSubmit(form);
+    }
     onClose();
   };
 
@@ -70,7 +111,15 @@ export default function ResourceFormModal({
                 {field.label}
               </span>
 
-              {field.type === "select" ? (
+              {field.type === "file" ? (
+                <input
+                  type="file"
+                  name={field.name}
+                  onChange={handleChange}
+                  className="input"
+                  required={field.required}
+                />
+              ) : field.type === "select" ? (
                 <select
                   name={field.name}
                   value={value}
@@ -105,10 +154,11 @@ export default function ResourceFormModal({
                 />
               ) : (
                 <input
-                  type={field.type || "text"}
+                  type={field.type === "number" ? "text" : field.type || "text"}
                   name={field.name}
-                  value={value}
+                  value={field.type === "number" ? formatRupiah(value) : value}
                   onChange={handleChange}
+                  data-type={field.type === "number" ? "currency" : undefined}
                   required={field.required}
                   min={field.min}
                   max={field.max}

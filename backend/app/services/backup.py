@@ -1,4 +1,5 @@
 import os
+import glob
 from datetime import date, datetime, time
 from decimal import Decimal
 
@@ -101,6 +102,17 @@ def create_backup(db):
     
 def delete_backup_file(db, backup):
     try:
+        files = glob.glob(
+            os.path.join(
+                settings.backup_dir,
+                f"{backup.db}_*.sql"
+            )
+        )
+
+        for file_path in files:
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+
         db.delete(backup)
         db.commit()
 
@@ -111,6 +123,7 @@ def delete_backup_file(db, backup):
 
     except Exception as error:
         db.rollback()
+
         raise HTTPException(
             status_code=500,
             detail=f"{type(error).__name__}: {str(error)}",

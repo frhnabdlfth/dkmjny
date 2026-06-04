@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.models.entities import Backup, JadwalDKM, Keuangan, ProkerDKM, Renovasi, Sarpras
+from app.models.entities import Backup, JadwalDKM, Keuangan, ProkerDKM, Renovasi, Sarpras, KondisiEnum
+from app.services.sarpras import SarprasService
 from app.schemas.common import Message
 from app.schemas.entities import (
     BackupRead,
@@ -64,7 +65,6 @@ def register_crud(prefix: str, model, create_schema, update_schema, read_schema)
 
 
 register_crud("/keuangan", Keuangan, KeuanganCreate, KeuanganUpdate, KeuanganRead)
-register_crud("/sarpras", Sarpras, SarprasCreate, SarprasUpdate, SarprasRead)
 register_crud("/jadwal-dkm", JadwalDKM, JadwalCreate, JadwalUpdate, JadwalRead)
 register_crud("/proker-dkm", ProkerDKM, ProkerCreate, ProkerUpdate, ProkerRead)
 register_crud("/renovasi", Renovasi, RenovasiCreate, RenovasiUpdate, RenovasiRead)
@@ -85,3 +85,67 @@ def delete_backup(item_id: int, db: Session = Depends(get_db)):
     item = crud.get_item(db, Backup, item_id)
     backup_service.delete_backup_file(db, item)
     return {"message": "Backup berhasil dihapus"}
+
+
+@router.get("/sarpras", response_model=list[SarprasRead])
+def list_sarpras(db: Session = Depends(get_db)):
+    return db.query(Sarpras).all()
+
+
+@router.post("/sarpras", response_model=SarprasRead)
+def create_sarpras(
+    user_id: int = Form(...),
+    barang: str = Form(...),
+    kondisi: str = Form(...),
+    file: UploadFile | None = File(None),
+    db: Session = Depends(get_db),
+):
+    try:
+        data = SarprasCreate(
+            user_id=user_id,
+            barang=barang,
+            kondisi=KondisiEnum(kondisi),
+        )
+    except Exception as e:
+        raise HTTPException(400, f"Invalid kondisi: {kondisi}")
+
+    return SarprasService.create(db, data, file)
+
+@router.put("/sarpras/{item_id}", response_model=SarprasRead)
+def update_sarpras(
+    item_id: int,
+    barang: str | None = Form(None),
+    kondisi: KondisiEnum | None = Form(None),
+    file: UploadFile | None = File(None),
+    db: Session = Depends(get_db),
+):
+    print("FILE:", file)
+    print("FILE FILENAME:", file.filename if file else None)
+    data = SarprasUpdate(barang=barang, kondisi=kondisi)
+    result = SarprasService.update(db, item_id, data, file)
+
+    if not result:
+        raise HTTPException(status_code=404, detail="Data tidak ditemukan")
+
+    return result
+
+@router.delete("/sarpras/{item_id}", response_model=Message)
+def delete_sarpras(
+    item_id: int,
+    db: Session = Depends(get_db),
+):
+    result = SarprasService.delete(db, item_id)
+
+    if not result:
+        raise HTTPException(status_code=404, detail="Data tidak ditemukan")
+
+    return {"message": "Sarpras berhasil dihapus"}
+
+@router.get("/sarpras/{item_id}", response_model=SarprasRead)
+def detail_sarpras(item_id: int, db: Session = Depends(get_db)):
+    sarpras = db.query(Sarpras).filter(Sarpras.id == item_id).first()
+
+    if not sarpras:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    return SarprasRead.model_validate(sarpras)

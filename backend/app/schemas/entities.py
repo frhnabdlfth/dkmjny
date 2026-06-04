@@ -20,6 +20,7 @@ class KeuanganBase(BaseModel):
     jenis_pengeluaran: str | None = None
     jenis_pemasukan: str | None = None
     tanggal: date
+    deskripsi: str | None = None
 
 
 class KeuanganCreate(KeuanganBase):
@@ -32,6 +33,7 @@ class KeuanganUpdate(BaseModel):
     jenis_pengeluaran: str | None = None
     jenis_pemasukan: str | None = None
     tanggal: date | None = None
+    deskripsi: str | None = None
 
 
 class KeuanganRead(ORMBase):
@@ -42,6 +44,7 @@ class KeuanganRead(ORMBase):
     jenis_pengeluaran: str | None = None
     jenis_pemasukan: str | None = None
     tanggal: date
+    deskripsi: str | None = None
     created_at: datetime
 
 
@@ -49,6 +52,7 @@ class SarprasBase(BaseModel):
     user_id: int = 1
     barang: str = Field(min_length=2, max_length=255)
     kondisi: KondisiEnum
+    foto: str | None = None
 
 
 class SarprasCreate(SarprasBase):
@@ -58,6 +62,7 @@ class SarprasCreate(SarprasBase):
 class SarprasUpdate(BaseModel):
     barang: str | None = Field(default=None, min_length=2, max_length=255)
     kondisi: KondisiEnum | None = None
+    foto: str | None = Field(default=None, max_length=255)
 
 
 class SarprasRead(ORMBase, SarprasBase):

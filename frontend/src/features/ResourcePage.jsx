@@ -109,11 +109,11 @@ const ResourcePage = forwardRef(function ResourcePage(
                 <span className="hidden sm:inline">Lihat</span>
               </button>
             )}
-            <button className="btn-ghost !py-2" onClick={() => openEdit(row)}>
+            <button className="btn-yellow !py-2" onClick={() => openEdit(row)}>
               <SquarePen size={20} />
               <span className="hidden sm:inline">Edit</span>
             </button>
-            <button className="btn-dark !py-2" onClick={() => openDelete(row)}>
+            <button className="btn-red !py-2" onClick={() => openDelete(row)}>
               <Trash2 size={20} />
               <span className="hidden sm:inline">Hapus</span>
             </button>

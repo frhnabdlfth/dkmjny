@@ -26,9 +26,23 @@ export default function KeuanganPage() {
   const [editData, setEditData] = useState(null);
   const resourcePageRef = useRef(null);
 
+  const formatTanggal = (tanggal) => {
+    if (!tanggal) return "-";
+
+    return new Intl.DateTimeFormat("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(new Date(tanggal));
+  };
+
   const columns = useMemo(
     () => [
-      { key: "tanggal", label: "Tanggal" },
+      {
+        key: "tanggal",
+        label: "Tanggal",
+        render: (r) => formatTanggal(r.tanggal),
+      },
       {
         key: "pemasukan",
         label: "Pemasukan",
@@ -44,17 +58,26 @@ export default function KeuanganPage() {
         label: "Jenis Transaksi",
         render: (r) => r.jenis_pemasukan || r.jenis_pengeluaran || "-",
       },
+      {
+        key: "deskripsi",
+        label: "Deskripsi Keuangan",
+        render: (r) => r.deskripsi || "-",
+      },
     ],
     [],
   );
 
   const viewColumns = useMemo(() => {
     const baseColumns = [
-      { key: "tanggal", label: "Tanggal" },
+      {
+        key: "tanggal",
+        label: "Tanggal",
+        render: (r) => formatTanggal(r.tanggal),
+      },
       {
         key: "pemasukan",
         label: "Pemasukan",
-        render: (r) => money(r.pemasukan),
+        render: (r) => formatTanggal(r.tanggal),
       },
       {
         key: "pengeluaran",
@@ -76,6 +99,12 @@ export default function KeuanganPage() {
         render: (r) => r.jenis_pengeluaran || "-",
       });
     }
+
+    baseColumns.push({
+      key: "deskripsi",
+      label: "Deskripsi Keuangan",
+      render: (r) => r.deskripsi,
+    });
 
     return baseColumns;
   }, [tipeTransaksi]);
@@ -105,6 +134,7 @@ export default function KeuanganPage() {
           defaultValue: "",
         },
         { name: "tanggal", label: "Tanggal", type: "date", required: true },
+        { name: "deskripsi", label: "Deskripsi", required: false },
         {
           name: "pengeluaran",
           label: "Pengeluaran",
@@ -143,6 +173,7 @@ export default function KeuanganPage() {
           defaultValue: "",
         },
         { name: "tanggal", label: "Tanggal", type: "date", required: true },
+        { name: "deskripsi", label: "Deskripsi", required: false },
         {
           name: "pemasukan",
           label: "Pemasukan",
@@ -177,12 +208,12 @@ export default function KeuanganPage() {
         <SummaryCard
           title="Saldo Pemasukan"
           amount={totalPemasukan}
-          color="bg-green-500"
+          color="bg-green-700"
         />
         <SummaryCard
           title="Saldo Pengeluaran"
           amount={totalPengeluaran}
-          color="bg-red-500"
+          color="bg-red-800"
         />
         <SummaryCard
           title="Sisa Saldo"
