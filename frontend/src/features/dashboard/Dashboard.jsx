@@ -109,6 +109,16 @@ function StatCard({ icon: Icon, title, value, tone = "bg-limey", delay = 0 }) {
 
 function EventDetailModal({ date, events, onClose }) {
   if (!date || !events?.length) return null;
+  
+  const formatTanggal = (tanggal) => {
+    if (!tanggal) return "-";
+
+    return new Intl.DateTimeFormat("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(new Date(tanggal));
+  };
 
   return (
     <AnimatePresence>
@@ -160,7 +170,7 @@ function EventDetailModal({ date, events, onClose }) {
               >
                 <p className="font-black text-ink">{event.kegiatan_dkm}</p>
                 <p className="mt-1 text-sm text-black/50">
-                  {event.tanggal_kegiatan} • {event.waktu_kegiatan}
+                  {formatTanggal(event.tanggal_kegiatan)} • {event.waktu_kegiatan}
                 </p>
               </motion.div>
             ))}
@@ -572,7 +582,7 @@ export default function Dashboard() {
                     {item.kegiatan_dkm}
                   </p>
                   <p className="text-xs text-black/50">
-                    {item.tanggal_kegiatan} • {item.waktu_kegiatan}
+                    {formatTanggal(item.tanggal_kegiatan)} • {item.waktu_kegiatan}
                   </p>
                 </motion.div>
               ))

@@ -76,12 +76,13 @@ class JadwalDKM(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    tanggal: Mapped[Date] = mapped_column(Date, nullable=False)
     imam: Mapped[str] = mapped_column(String(255), nullable=False)
     kategori_imam: Mapped[str] = mapped_column(String(100), nullable=False)
-    khatib: Mapped[str] = mapped_column(String(255), nullable=False)
-    kategori_khatib: Mapped[str] = mapped_column(String(100), nullable=False)
-    muadzin: Mapped[str] = mapped_column(String(255), nullable=False)
-    kategori_muadzin: Mapped[str] = mapped_column(String(100), nullable=False)
+    khatib: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    kategori_khatib: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    muadzin: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    kategori_muadzin: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     user = relationship("User", back_populates="jadwal_dkm")
 

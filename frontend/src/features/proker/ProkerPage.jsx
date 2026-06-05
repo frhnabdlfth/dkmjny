@@ -11,6 +11,12 @@ export default function ProkerPage() {
     }).format(new Date(tanggal));
   };
 
+  const formatWaktu = (waktu) => {
+    if (!waktu) return "-";
+
+    return waktu.slice(0, 5);
+  };
+
   return (
     <ResourcePage
       title="Proker DKM"
@@ -19,8 +25,12 @@ export default function ProkerPage() {
       labelKey="kegiatan_dkm"
       columns={[
         { key: "kegiatan_dkm", label: "Kegiatan" },
-        { key: "waktu_kegiatan", label: "Waktu Kegiatan" },
-        { key: "tanggal_kegiatan", label: "Tanggal Kegiatan", render: (r) => formatTanggal(r.tanggal_kegiatan)},
+        { key: "waktu_kegiatan", label: "Waktu Kegiatan", render: (r) => formatWaktu(r.waktu_kegiatan) },
+        {
+          key: "tanggal_kegiatan",
+          label: "Tanggal Kegiatan",
+          render: (r) => formatTanggal(r.tanggal_kegiatan),
+        },
       ]}
       fields={[
         {

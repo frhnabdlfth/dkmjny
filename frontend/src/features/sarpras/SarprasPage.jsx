@@ -3,6 +3,9 @@ import ResourcePage from "../ResourcePage";
 
 export default function SarprasPage() {
   const [previewFoto, setPreviewFoto] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("");
+  const [sort, setSort] = useState("desc");
 
   const getImageUrl = (file) => {
     if (!file) return null;
@@ -29,6 +32,20 @@ export default function SarprasPage() {
         subtitle="Inventaris barang dan kondisi barang masjid."
         path="/sarpras"
         labelKey="barang"
+        enableSearch
+        searchFields={["barang", "kondisi"]}
+        enableFilter
+        filterField="kondisi"
+        filterOptions={[
+          {
+            label: "Kondisi",
+            options: [
+              { label: "Rusak", value: "Rusak" },
+              { label: "Bagus", value: "Bagus" },
+              { label: "Perlu Diperbaiki", value: "Perlu Diperbaiki" },
+            ],
+          },
+        ]}
         columns={[
           { key: "barang", label: "Barang" },
           {

@@ -1,7 +1,16 @@
-import { useMemo, useState } from "react";
-import { Menu, Search } from "lucide-react";
-import { Outlet, useLocation } from "react-router-dom";
+import { useMemo, useState, useRef, useEffect } from "react";
+import {
+  Menu,
+  Search,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Settings,
+  LogOut,
+} from "lucide-react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "./Sidebar";
+import { logout } from "../../lib/auth";
 
 const pageMeta = {
   "/dashboard": {
@@ -35,14 +44,77 @@ const pageMeta = {
 };
 
 export default function AppShell() {
+  const navigate = useNavigate();
+
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [logoutModal, setLogoutModal] = useState(false);
+  const profileRef = useRef(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const location = useLocation();
+  const [accountModal, setAccountModal] = useState(false);
+
+  const [form, setForm] = useState({
+    username: "",
+    email: "",
+    password: "",
+    password_confirmation: "",
+  });
 
   const meta = useMemo(
     () => pageMeta[location.pathname] ?? pageMeta["/dashboard"],
     [location.pathname],
   );
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      const userId = localStorage.getItem("user_id");
+
+      const res = await api.get(`/user/${userId}`);
+
+      setForm({
+        username: res.data.username,
+        email: res.data.email,
+        password: "",
+        password_confirmation: "",
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdateAccount = async () => {
+    try {
+      await axios.put("http://localhost:8000/api/user/${userId}", {
+        username: accountForm.username,
+        email: accountForm.email,
+        password: accountForm.password || null,
+      });
+
+      toast.success("Akun berhasil diperbarui");
+      setAccountOpen(false);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Gagal memperbarui akun");
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gray-100 text-ink">
@@ -85,7 +157,11 @@ export default function AppShell() {
                 aria-label="Toggle sidebar"
                 className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-black/10 bg-white shadow-sm transition hover:bg-black/[0.02] lg:flex"
               >
-                <Menu size={22} />
+                {sidebarOpen ? (
+                  <PanelLeftClose size={22} />
+                ) : (
+                  <PanelLeftOpen size={22} />
+                )}
               </button>
 
               <div className="min-w-0">
@@ -99,17 +175,42 @@ export default function AppShell() {
             </div>
 
             <div className="flex justify-end items-center gap-4">
-              <div className="hidden min-w-[320px] max-w-sm flex-1 items-center gap-2 rounded-2xl border border-black/10 bg-white px-4 py-2 shadow-sm md:flex lg:max-w-md">
-                <Search size={18} className="text-black/35" />
-                <input
-                  type="search"
-                  placeholder="Cari data..."
-                  className="w-full bg-transparent text-sm outline-none placeholder:text-muted"
-                />
-              </div>
+              <div className="relative" ref={profileRef}>
+                <button
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-limey to-pink-200 font-black shadow-sm"
+                >
+                  A
+                </button>
 
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-limey to-pink-200 font-black shadow-sm">
-                A
+                {profileOpen && (
+                  <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl z-50">
+                    <button
+                      onClick={async () => {
+                        setProfileOpen(false);
+
+                        await loadUserProfile();
+
+                        setAccountModal(true);
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-3 text-sm hover:bg-gray-100"
+                    >
+                      <Settings size={18} />
+                      Pengaturan Akun
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setProfileOpen(false);
+                        setLogoutModal(true);
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50"
+                    >
+                      <LogOut size={18} />
+                      Logout
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -121,6 +222,174 @@ export default function AppShell() {
           </div>
         </main>
       </div>
+      <AnimatePresence>
+        {logoutModal && (
+          <motion.div
+            className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <motion.div
+              initial={{
+                opacity: 0,
+                scale: 0.9,
+                y: 20,
+              }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                y: 0,
+              }}
+              exit={{
+                opacity: 0,
+                scale: 0.9,
+                y: 20,
+              }}
+              transition={{
+                duration: 0.25,
+                ease: "easeOut",
+              }}
+              className="w-[90%] max-w-md rounded-2xl bg-white p-6 shadow-xl"
+            >
+              <h2 className="text-lg font-bold">Konfirmasi Logout</h2>
+
+              <p className="mt-2 text-sm text-gray-500">
+                Apakah Anda yakin ingin keluar dari aplikasi?
+              </p>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  onClick={() => setLogoutModal(false)}
+                  className="btn-ghost w-full sm:w-auto"
+                >
+                  Batal
+                </button>
+
+                <button
+                  onClick={handleLogout}
+                  className="rounded-xl bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+                >
+                  Logout
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {accountModal && (
+          <motion.div
+            className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setAccountModal(false)}
+          >
+            <motion.div
+              onClick={(e) => e.stopPropagation()}
+              initial={{
+                opacity: 0,
+                scale: 0.95,
+                y: 20,
+              }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                y: 0,
+              }}
+              exit={{
+                opacity: 0,
+                scale: 0.95,
+                y: 20,
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 400,
+                damping: 25,
+              }}
+              className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"
+            >
+              <h2 className="text-xl font-bold">Pengaturan Akun</h2>
+
+              <p className="mt-1 text-sm text-gray-500">
+                Ubah informasi akun Anda.
+              </p>
+
+              <div className="mt-6 space-y-4">
+                <div>
+                  <label className="mb-2 block text-sm font-medium">
+                    Username
+                  </label>
+
+                  <input
+                    type="text"
+                    value={form.username}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        username: e.target.value,
+                      })
+                    }
+                    className="input w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium">
+                    Email
+                  </label>
+
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        email: e.target.value,
+                      })
+                    }
+                    className="input w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium">
+                    Password Baru
+                  </label>
+
+                  <input
+                    type="password"
+                    value={form.password}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        password: e.target.value,
+                      })
+                    }
+                    placeholder="Kosongkan jika tidak diubah"
+                    className="input w-full"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  onClick={() => setAccountModal(false)}
+                  className="btn-ghost"
+                >
+                  Batal
+                </button>
+
+                <button onClick={handleUpdateAccount} className="btn-primary">
+                  Simpan
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

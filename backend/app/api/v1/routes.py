@@ -1,10 +1,12 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.models.entities import Backup, JadwalDKM, Keuangan, ProkerDKM, Renovasi, Sarpras, KondisiEnum
+from app.models.entities import User, Backup, JadwalDKM, Keuangan, ProkerDKM, Renovasi, Sarpras, KondisiEnum
 from app.services.sarpras import SarprasService
 from app.schemas.common import Message
 from app.schemas.entities import (
+    UserRead,
+    UserUpdate,
     BackupRead,
     JadwalCreate,
     JadwalRead,
@@ -25,6 +27,12 @@ from app.schemas.entities import (
 from app.services import backup as backup_service
 from app.services import crud
 from app.services.dashboard import get_dashboard_summary
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto"
+)
 
 router = APIRouter(prefix="/api")
 
@@ -38,6 +46,75 @@ def health():
 def dashboard(db: Session = Depends(get_db)):
     return get_dashboard_summary(db)
 
+
+@router.get("/user/{user_id}", response_model=UserRead)
+def get_user(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(
+        User.id == user_id
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User tidak ditemukan"
+        )
+
+    return user
+
+
+@router.put("/user/{user_id}", response_model=UserRead)
+def update_user(
+    user_id: int,
+    payload: UserUpdate,
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(
+        User.id == user_id
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User tidak ditemukan"
+        )
+
+    username_exist = db.query(User).filter(
+        User.username == payload.username,
+        User.id != user_id
+    ).first()
+
+    if username_exist:
+        raise HTTPException(
+            status_code=400,
+            detail="Username sudah digunakan"
+        )
+
+    email_exist = db.query(User).filter(
+        User.email == payload.email,
+        User.id != user_id
+    ).first()
+
+    if email_exist:
+        raise HTTPException(
+            status_code=400,
+            detail="Email sudah digunakan"
+        )
+
+    user.username = payload.username
+    user.email = payload.email
+
+    if payload.password:
+        user.password = pwd_context.hash(
+            payload.password
+        )
+
+    db.commit()
+    db.refresh(user)
+
+    return user
 
 def register_crud(prefix: str, model, create_schema, update_schema, read_schema):
     @router.get(prefix, response_model=list[read_schema])
@@ -70,6 +147,26 @@ register_crud("/proker-dkm", ProkerDKM, ProkerCreate, ProkerUpdate, ProkerRead)
 register_crud("/renovasi", Renovasi, RenovasiCreate, RenovasiUpdate, RenovasiRead)
 
 
+@router.get("/keuangan")
+def list_keuangan(
+    search: str | None = None,
+    sort: str = "desc",
+    db: Session = Depends(get_db),
+):
+    return crud.list_items(
+        db=db,
+        model=Keuangan,
+        search=search,
+        search_fields=[
+            "deskripsi",
+            "jenis_pemasukan",
+            "jenis_pengeluaran",
+        ],
+        sort_field="tanggal",
+        sort_order=sort,
+    )
+
+
 @router.get("/backup", response_model=list[BackupRead])
 def list_backups(db: Session = Depends(get_db)):
     return crud.list_items(db, Backup)
@@ -97,7 +194,7 @@ def create_sarpras(
     user_id: int = Form(...),
     barang: str = Form(...),
     kondisi: str = Form(...),
-    file: UploadFile | None = File(None),
+    foto: UploadFile | None = File(None),
     db: Session = Depends(get_db),
 ):
     try:
@@ -109,25 +206,25 @@ def create_sarpras(
     except Exception as e:
         raise HTTPException(400, f"Invalid kondisi: {kondisi}")
 
-    return SarprasService.create(db, data, file)
+    return SarprasService.create(db, data, foto)
+
 
 @router.put("/sarpras/{item_id}", response_model=SarprasRead)
 def update_sarpras(
     item_id: int,
     barang: str | None = Form(None),
     kondisi: KondisiEnum | None = Form(None),
-    file: UploadFile | None = File(None),
+    foto: UploadFile | None = File(None),
     db: Session = Depends(get_db),
 ):
-    print("FILE:", file)
-    print("FILE FILENAME:", file.filename if file else None)
     data = SarprasUpdate(barang=barang, kondisi=kondisi)
-    result = SarprasService.update(db, item_id, data, file)
+    result = SarprasService.update(db, item_id, data, foto)
 
     if not result:
         raise HTTPException(status_code=404, detail="Data tidak ditemukan")
 
     return result
+
 
 @router.delete("/sarpras/{item_id}", response_model=Message)
 def delete_sarpras(
@@ -140,6 +237,7 @@ def delete_sarpras(
         raise HTTPException(status_code=404, detail="Data tidak ditemukan")
 
     return {"message": "Sarpras berhasil dihapus"}
+
 
 @router.get("/sarpras/{item_id}", response_model=SarprasRead)
 def detail_sarpras(item_id: int, db: Session = Depends(get_db)):

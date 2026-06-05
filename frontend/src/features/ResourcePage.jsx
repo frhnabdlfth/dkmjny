@@ -6,6 +6,7 @@ import DataTable from "../components/ui/DataTable";
 import ResourceFormModal from "../components/modals/ResourceFormModal";
 import DeleteModal from "../components/modals/DeleteModal";
 import ViewModal from "../components/modals/ViewModal";
+import SearchFilterSort from "../components/common/SearchFilterSort";
 import { useCrud } from "../hooks/useCrud";
 
 const ResourcePage = forwardRef(function ResourcePage(
@@ -24,6 +25,14 @@ const ResourcePage = forwardRef(function ResourcePage(
     onBeforeView,
     viewColumns,
     renderHeader,
+
+    enableSearch = false,
+    enableFilter = false,
+    enableSort = false,
+    searchFields = [],
+    filterField = "",
+    filterOptions = [],
+    sortField = "",
   },
   ref,
 ) {
@@ -32,6 +41,9 @@ const ResourcePage = forwardRef(function ResourcePage(
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("");
+  const [sort, setSort] = useState("desc");
 
   useImperativeHandle(ref, () => ({
     openForm: (data = null) => {
@@ -83,6 +95,69 @@ const ResourcePage = forwardRef(function ResourcePage(
     setViewOpen(true);
   };
 
+  const filteredItems = useMemo(() => {
+    let result = [...items];
+
+    if (search) {
+      const keyword = search.toLowerCase();
+
+      result = result.filter((item) =>
+        searchFields.some((field) =>
+          String(item[field] || "")
+            .toLowerCase()
+            .includes(keyword),
+        ),
+      );
+    }
+
+    if (filter) {
+      if (filterField) {
+        result = result.filter(
+          (item) => String(item[filterField]) === String(filter),
+        );
+      } else {
+        result = result.filter(
+          (item) =>
+            item.jenis_pemasukan === filter ||
+            item.jenis_pengeluaran === filter,
+        );
+      }
+    }
+
+    if (sortField) {
+      result.sort((a, b) => {
+        const first = a[sortField];
+        const second = b[sortField];
+
+        return sort === "asc"
+          ? first > second
+            ? 1
+            : -1
+          : first < second
+            ? 1
+            : -1;
+      });
+    }
+
+    return result;
+  }, [items, search, filter, sort, searchFields, sortField]);
+
+  const emptyMessage = useMemo(() => {
+    if (search && filteredItems.length === 0) {
+      return `Tidak ada data hasil pencarian "${search}"`;
+    }
+
+    if (filter && filteredItems.length === 0) {
+      return `Tidak ada data ${filter} yang ditemukan`;
+    }
+
+    if (items.length === 0) {
+      return "Belum ada data";
+    }
+
+    return null;
+  }, [search, filter, filteredItems.length, items.length]);
+
   return (
     <>
       <PageTitle
@@ -97,29 +172,68 @@ const ResourcePage = forwardRef(function ResourcePage(
         }
       />
       {renderHeader && renderHeader(items)}
-      <DataTable
-        loading={loading}
-        data={items}
-        columns={columns}
-        actions={(row) => (
-          <div className="flex items-center gap-1">
-            {canView && (
-              <button className="btn-ghost !py-2" onClick={() => openView(row)}>
-                <Eye size={20} />
-                <span className="hidden sm:inline">Lihat</span>
+      {(enableSearch || enableFilter || (enableSort && sortField)) && (
+        <SearchFilterSort
+          search={search}
+          onSearchChange={setSearch}
+          filterValue={filter}
+          onFilterChange={setFilter}
+          filterOptions={filterOptions}
+          sortValue={sort}
+          onSortChange={setSort}
+          sortOptions={
+            enableSort && sortField
+              ? [
+                  {
+                    label: "Terbaru",
+                    value: "desc",
+                  },
+                  {
+                    label: "Terlama",
+                    value: "asc",
+                  },
+                ]
+              : []
+          }
+        />
+      )}
+      {filteredItems.length > 0 ? (
+        <DataTable
+          loading={loading}
+          data={filteredItems}
+          columns={columns}
+          actions={(row) => (
+            <div className="flex items-center gap-1">
+              {canView && (
+                <button
+                  className="btn-ghost !py-2"
+                  onClick={() => openView(row)}
+                >
+                  <Eye size={20} />
+                  <span className="hidden sm:inline">Lihat</span>
+                </button>
+              )}
+              <button
+                className="btn-yellow !py-2"
+                onClick={() => openEdit(row)}
+              >
+                <SquarePen size={20} />
+                <span className="hidden sm:inline">Edit</span>
               </button>
-            )}
-            <button className="btn-yellow !py-2" onClick={() => openEdit(row)}>
-              <SquarePen size={20} />
-              <span className="hidden sm:inline">Edit</span>
-            </button>
-            <button className="btn-red !py-2" onClick={() => openDelete(row)}>
-              <Trash2 size={20} />
-              <span className="hidden sm:inline">Hapus</span>
-            </button>
+              <button className="btn-red !py-2" onClick={() => openDelete(row)}>
+                <Trash2 size={20} />
+                <span className="hidden sm:inline">Hapus</span>
+              </button>
+            </div>
+          )}
+        />
+      ) : (
+        !loading && (
+          <div className="bg-white rounded-xl p-10 text-center">
+            <p className="text-gray-500">{emptyMessage}</p>
           </div>
-        )}
-      />
+        )
+      )}
       <ResourceFormModal
         open={formOpen}
         title={selected ? `Edit ${title}` : `Tambah ${title}`}

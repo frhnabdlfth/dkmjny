@@ -25,6 +25,9 @@ export default function KeuanganPage() {
   const [typeSelectionOpen, setTypeSelectionOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const resourcePageRef = useRef(null);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("");
+  const [sort, setSort] = useState("desc");
 
   const formatTanggal = (tanggal) => {
     if (!tanggal) return "-";
@@ -103,7 +106,7 @@ export default function KeuanganPage() {
     baseColumns.push({
       key: "deskripsi",
       label: "Deskripsi Keuangan",
-      render: (r) => r.deskripsi,
+      render: (r) => r.deskripsi || "-",
     });
 
     return baseColumns;
@@ -276,6 +279,31 @@ export default function KeuanganPage() {
         path="/keuangan"
         labelKey="jenis_pengeluaran"
         canView
+        enableSearch
+        searchFields={["deskripsi", "jenis_pemasukan", "jenis_pengeluaran"]}
+        enableFilter
+        filterOptions={[
+          {
+            label: "Pemasukan",
+            options: [
+              { label: "Amal", value: "Amal" },
+              { label: "Sedekah", value: "Sedekah" },
+              { label: "Infaq", value: "Infaq" },
+              { label: "Lainnya", value: "Lainnya" },
+            ],
+          },
+          {
+            label: "Pengeluaran",
+            options: [
+              { label: "Jasa", value: "Jasa" },
+              { label: "Belanja", value: "Belanja" },
+              { label: "Renovasi", value: "Renovasi" },
+              { label: "Lainnya", value: "Lainnya" },
+            ],
+          },
+        ]}
+        enableSort
+        sortField="tanggal"
         columns={columns}
         viewColumns={viewColumns}
         fields={fields}

@@ -11,6 +11,39 @@ def list_items(db: Session, model: type[ModelType], skip: int = 0, limit: int = 
     return list(db.scalars(select(model).offset(skip).limit(limit)).all())
 
 
+def list_items(
+    db,
+    model,
+    skip=0,
+    limit=100,
+    search=None,
+    search_fields=None,
+    sort_field=None,
+    sort_order="desc",
+):
+    query = db.query(model)
+
+    if search and search_fields:
+        conditions = []
+
+        for field in search_fields:
+            conditions.append(
+                getattr(model, field).ilike(f"%{search}%")
+            )
+
+        query = query.filter(or_(*conditions))
+
+    if sort_field:
+        column = getattr(model, sort_field)
+
+        if sort_order == "asc":
+            query = query.order_by(column.asc())
+        else:
+            query = query.order_by(column.desc())
+
+    return query.offset(skip).limit(limit).all()
+
+
 def get_item(db: Session, model: type[ModelType], item_id: int) -> ModelType:
     item = db.get(model, item_id)
     if not item:

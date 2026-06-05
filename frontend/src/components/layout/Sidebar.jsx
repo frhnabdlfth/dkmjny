@@ -6,11 +6,9 @@ import {
   LayoutDashboard,
   Package,
   Wallet,
-  X,
-  LogOut,
+  X
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { logout } from "../../lib/auth";
 
 const menuItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -23,13 +21,6 @@ const menuItems = [
 ];
 
 export default function Sidebar({ isOpen, isMobileOpen, onCloseMobile }) {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login", { replace: true });
-  };
-
   return (
     <aside
       className={[
@@ -98,24 +89,6 @@ export default function Sidebar({ isOpen, isMobileOpen, onCloseMobile }) {
         </nav>
 
         <div className="shrink-0 px-4 py-4">
-          <button
-            type="button"
-            onClick={handleLogout}
-            title={!isOpen ? "Logout" : undefined}
-            className={[
-              "group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-bold transition",
-              "text-white/70 hover:bg-white/10 hover:text-white",
-              !isOpen ? "lg:justify-center lg:px-0" : "",
-            ].join(" ")}
-          >
-            <LogOut size={21} className="shrink-0" />
-            <span
-              className={["truncate", !isOpen ? "lg:hidden" : ""].join(" ")}
-            >
-              Logout
-            </span>
-          </button>
-
           <div className={["mt-4", !isOpen ? "lg:hidden" : ""].join(" ")}>
             <div className="w-full rounded-3xl bg-limey p-4 text-ink">
               <p className="text-sm font-black">DKMJNY Digital</p>

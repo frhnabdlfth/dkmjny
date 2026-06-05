@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import date, datetime, time
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, field_validator, EmailStr
 from app.models.entities import KategoriPetugasEnum, KondisiEnum, RoleEnum
 from app.schemas.common import ORMBase
 
@@ -11,6 +11,12 @@ class UserRead(ORMBase):
     email: str
     role: RoleEnum
     created_at: datetime
+    
+
+class UserUpdate(BaseModel):
+    username: str
+    email: EmailStr
+    password: Optional[str] = None
 
 
 class KeuanganBase(BaseModel):
@@ -71,12 +77,20 @@ class SarprasRead(ORMBase, SarprasBase):
 
 class JadwalBase(BaseModel):
     user_id: int = 1
+    tanggal: date
     imam: str = Field(min_length=2, max_length=255)
     kategori_imam: str
-    khatib: str = Field(min_length=2, max_length=255)
-    kategori_khatib: str
-    muadzin: str = Field(min_length=2, max_length=255)
-    kategori_muadzin: str
+    khatib: str | None = Field(default=None, min_length=2, max_length=255)
+    kategori_khatib: str | None = Field(default=None)
+    muadzin: str | None = Field(default=None, min_length=2, max_length=255)
+    kategori_muadzin: str | None = Field(default=None)
+
+    @field_validator("khatib", "muadzin", "kategori_khatib", "kategori_muadzin", mode="before")
+    @classmethod
+    def empty_str_to_none(cls, v):
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
 
 
 class JadwalCreate(JadwalBase):
@@ -84,12 +98,24 @@ class JadwalCreate(JadwalBase):
 
 
 class JadwalUpdate(BaseModel):
-    imam: Optional[str] = Field(default=None, min_length=2, max_length=255)
-    kategori_imam: Optional[str] = None
-    khatib: Optional[str] = Field(default=None, min_length=2, max_length=255)
-    kategori_khatib: Optional[str] = None
-    muadzin: Optional[str] = Field(default=None, min_length=2, max_length=255)
-    kategori_muadzin: Optional[str] = None
+    tanggal: date | None = None
+    imam: str | None = Field(default=None, min_length=2, max_length=255)
+    kategori_imam: str | None = None
+    khatib: str | None = Field(default=None, min_length=2, max_length=255)
+    kategori_khatib: str | None = None
+    muadzin: str | None = Field(default=None, min_length=2, max_length=255)
+    kategori_muadzin: str | None = None
+
+    @field_validator(
+        "imam", "khatib", "muadzin",
+        "kategori_imam", "kategori_khatib", "kategori_muadzin",
+        mode="before",
+    )
+    @classmethod
+    def empty_str_to_none(cls, v):
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
 
 
 class JadwalRead(ORMBase, JadwalBase):

@@ -5,17 +5,17 @@ from app.models.entities import Sarpras
 class SarprasService:
 
     @staticmethod
-    def create(db, data, file):
+    def create(db, data, foto=None):
         filename = None
 
-        if file and file.filename:
-            filename = FileService.save_image(file)
+        if foto and foto.filename:
+            filename = FileService.save_image(foto)
 
         sarpras = Sarpras(
             user_id=data.user_id,
             barang=data.barang,
             kondisi=data.kondisi,
-            foto=filename
+            foto=filename,
         )
 
         db.add(sarpras)
@@ -23,7 +23,7 @@ class SarprasService:
         db.refresh(sarpras)
 
         return sarpras
-    
+
     @staticmethod
     def delete(db, sarpras_id: int):
         sarpras = db.query(Sarpras).filter(Sarpras.id == sarpras_id).first()
@@ -37,23 +37,23 @@ class SarprasService:
         db.commit()
 
         return sarpras
-    
+
     @staticmethod
-    def update(db, sarpras_id: int, data, file=None):
-        print("file:", file)
-        print("file.filename:", file.filename if file else "NONE")
-        
+    def update(db, sarpras_id: int, data, foto=None):
         sarpras = db.query(Sarpras).filter(Sarpras.id == sarpras_id).first()
 
         if not sarpras:
             return None
 
-        sarpras.barang = data.barang or sarpras.barang
-        sarpras.kondisi = data.kondisi or sarpras.kondisi
+        if data.barang is not None:
+            sarpras.barang = data.barang
+        if data.kondisi is not None:
+            sarpras.kondisi = data.kondisi
 
-        if file and file.filename:  # ← tambah pengecekan file.filename
+        # Only replace the file when a new one is actually uploaded
+        if foto and foto.filename:
             FileService.delete_image(sarpras.foto)
-            sarpras.foto = FileService.save_image(file)
+            sarpras.foto = FileService.save_image(foto)
 
         db.commit()
         db.refresh(sarpras)

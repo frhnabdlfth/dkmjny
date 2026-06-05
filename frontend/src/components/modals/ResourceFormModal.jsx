@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Modal from "../ui/Modal";
+import DatePicker from "../ui/DatePicker";
 
 export default function ResourceFormModal({
   open,
@@ -142,6 +143,18 @@ export default function ResourceFormModal({
                     );
                   })}
                 </select>
+              ) : field.type === "date" ? (
+                <DatePicker
+                  value={value}
+                  required={field.required}
+                  placeholder={field.placeholder || field.label}
+                  onChange={(selectedDate) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      [field.name]: selectedDate,
+                    }))
+                  }
+                />
               ) : field.type === "textarea" ? (
                 <textarea
                   name={field.name}

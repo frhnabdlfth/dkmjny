@@ -28,7 +28,7 @@ export default function DataTable({ columns, data, actions, loading }) {
           </thead>
           <tbody className="divide-y divide-black/5">
             {data.map((row, index) => (
-              <tr key={row.id} className="hover:bg-black/[0.015]">
+              <tr key={row.id} className="hover:bg-black/[0.050]">
                 <td className="table-td text-nowrap text-center text-xs sm:text-sm font-medium w-12">
                   {index + 1}
                 </td>

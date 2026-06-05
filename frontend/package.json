@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
+    "air-datepicker": "^3.6.0",
     "axios": "latest",
     "framer-motion": "^12.40.0",
     "lucide-react": "latest",
