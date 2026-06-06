@@ -52,7 +52,7 @@ class Keuangan(Base):
     pengeluaran: Mapped[int] = mapped_column(Integer, default=0)
     jenis_pengeluaran: Mapped[str | None] = mapped_column(String(50), nullable=True)
     jenis_pemasukan: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    tanggal: Mapped[Date] = mapped_column(Date, nullable=False)
+    tanggal: Mapped[Date] = mapped_column(Date, nullable=False, index=True)
     deskripsi: Mapped[str] = mapped_column(String(255), nullable=True, index=True)
     created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
 
@@ -66,7 +66,7 @@ class Sarpras(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     foto: Mapped[str] = mapped_column(String(255), nullable=True)
     barang: Mapped[str] = mapped_column(String(255), nullable=False)
-    kondisi: Mapped[str] = mapped_column(String(50), nullable=False)
+    kondisi: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
 
     user = relationship("User", back_populates="sarpras")
 
@@ -76,7 +76,7 @@ class JadwalDKM(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    tanggal: Mapped[Date] = mapped_column(Date, nullable=False)
+    tanggal: Mapped[Date] = mapped_column(Date, nullable=False, index=True)
     imam: Mapped[str] = mapped_column(String(255), nullable=False)
     kategori_imam: Mapped[str] = mapped_column(String(100), nullable=False)
     khatib: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -94,7 +94,7 @@ class ProkerDKM(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     kegiatan_dkm: Mapped[str] = mapped_column(String(255), nullable=False)
     waktu_kegiatan: Mapped[Time] = mapped_column(Time, nullable=False)
-    tanggal_kegiatan: Mapped[Date] = mapped_column(Date, nullable=False)
+    tanggal_kegiatan: Mapped[Date] = mapped_column(Date, nullable=False, index=True)
 
     user = relationship("User", back_populates="proker_dkm")
 
@@ -105,7 +105,7 @@ class Renovasi(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     jenis_perbaikan: Mapped[str] = mapped_column(String(255), nullable=False)
-    tanggal_perbaikan: Mapped[Date] = mapped_column(Date, nullable=False)
+    tanggal_perbaikan: Mapped[Date] = mapped_column(Date, nullable=False, index=True)
     progress: Mapped[int] = mapped_column(Integer, default=0)
 
     user = relationship("User", back_populates="renovasi")

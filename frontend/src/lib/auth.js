@@ -1,35 +1,31 @@
-const DUMMY_USER = {
-  id: 1,
-  name: "Admin DKMJNY",
-  email: "admin@dkmjny.com",
-  password: "admin123",
-  role: "Admin",
-};
+import { api } from "./api";
 
 const AUTH_KEY = "dkmjny_auth_user";
+const TOKEN_KEY = "dkmjny_auth_token";
 
-export function login(email, password) {
-  const isValid =
-    email === DUMMY_USER.email && password === DUMMY_USER.password;
+export async function login(loginId, password) {
+  try {
+    const response = await api.post("/auth/login", {
+      login_id: loginId,
+      password: password,
+    });
 
-  if (!isValid) {
-    throw new Error("Email atau password salah");
+    const { access_token, user } = response.data;
+
+    localStorage.setItem(TOKEN_KEY, access_token);
+    localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+
+    return user;
+  } catch (err) {
+    const message =
+      err.response?.data?.detail || "Login gagal, periksa koneksi server";
+    throw new Error(message);
   }
-
-  const user = {
-    id: DUMMY_USER.id,
-    name: DUMMY_USER.name,
-    email: DUMMY_USER.email,
-    role: DUMMY_USER.role,
-  };
-
-  localStorage.setItem(AUTH_KEY, JSON.stringify(user));
-
-  return user;
 }
 
 export function logout() {
   localStorage.removeItem(AUTH_KEY);
+  localStorage.removeItem(TOKEN_KEY);
 }
 
 export function getAuthUser() {
@@ -45,6 +41,10 @@ export function getAuthUser() {
   }
 }
 
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
 export function isAuthenticated() {
-  return Boolean(getAuthUser());
+  return Boolean(getAuthUser()) && Boolean(getToken());
 }

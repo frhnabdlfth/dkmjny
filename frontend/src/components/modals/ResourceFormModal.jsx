@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
+import toast from "react-hot-toast";
 import Modal from "../ui/Modal";
 import DatePicker from "../ui/DatePicker";
+import TimePicker from "../ui/TimePicker";
 
-export default function ResourceFormModal({
+const ResourceFormModal = memo(function ResourceFormModal({
   open,
   title,
   fields = [],
@@ -78,26 +80,41 @@ export default function ResourceFormModal({
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const hasFile = fields.some((f) => f.type === "file");
 
-    if (hasFile) {
-      const formData = new FormData();
-      Object.entries(form).forEach(([key, value]) => {
-        if (value === undefined || value === null) return;
-        const isFileField = fields.find((f) => f.name === key)?.type === "file";
-        if (isFileField && !(value instanceof File)) return;
-        formData.append(key, value);
-      });
+    try {
+      const hasFile = fields.some((f) => f.type === "file");
 
-      for (let [k, v] of formData.entries()) {
-        console.log(k, v);
+      if (hasFile) {
+        const formData = new FormData();
+
+        Object.entries(form).forEach(([key, value]) => {
+          if (value === undefined || value === null) return;
+
+          const isFileField =
+            fields.find((f) => f.name === key)?.type === "file";
+
+          if (isFileField && !(value instanceof File)) return;
+
+          formData.append(key, value);
+        });
+
+        await onSubmit(formData);
+      } else {
+        await onSubmit(form);
       }
 
-      await onSubmit(formData);
-    } else {
-      await onSubmit(form);
+      toast.success(
+        initialData ? "Data berhasil diperbarui" : "Data berhasil ditambahkan",
+      );
+
+      onClose();
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.detail ||
+          error?.message ||
+          "Gagal menyimpan data",
+      );
     }
-    onClose();
   };
 
   return (
@@ -155,6 +172,18 @@ export default function ResourceFormModal({
                     }))
                   }
                 />
+              ) : field.type === "time" ? (
+                <div className="w-full">
+                  <TimePicker
+                    value={value}
+                    onChange={(selectedTime) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        [field.name]: selectedTime,
+                      }))
+                    }
+                  />
+                </div>
               ) : field.type === "textarea" ? (
                 <textarea
                   name={field.name}
@@ -196,4 +225,6 @@ export default function ResourceFormModal({
       </form>
     </Modal>
   );
-}
+});
+
+export default ResourceFormModal;

@@ -1,8 +1,9 @@
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from app.models.entities import Keuangan, ProkerDKM, Renovasi, Sarpras
+from app.core.cache import ttl_cache
 
-
+@ttl_cache(ttl_seconds=60)
 def get_dashboard_summary(db: Session) -> dict:
     kondisi_rows = db.execute(select(Sarpras.kondisi, func.count(Sarpras.id)).group_by(Sarpras.kondisi)).all()
     kondisi = {str(name.value if hasattr(name, "value") else name): total for name, total in kondisi_rows}

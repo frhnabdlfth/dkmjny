@@ -23,14 +23,7 @@ body {
   margin: 0;
   min-height: 100%;
   overflow-x: hidden;
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family: "Geist", sans-serif;
   @apply bg-gray-100 text-ink antialiased;
 }
 
@@ -89,4 +82,59 @@ button {
   .table-td {
     @apply px-4 py-3 text-sm text-ink;
   }
+}
+
+@font-face {
+  font-family: "Geist";
+  src: url("./assets/fonts/Geist-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Geist";
+  src: url("./assets/fonts/Geist-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Geist";
+  src: url("./assets/fonts/Geist-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Geist";
+  src: url("./assets/fonts/Geist-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+}
+
+.air-datepicker-body--day-name {
+  background: #c6f432 !important;
+  color: var(--color-ink, #111827) !important;
+  font-weight: 700;
+  border-radius: 8px;
+  margin: 2px;
+}
+
+.air-datepicker-body--day-names {
+  margin-bottom: 6px;
+}
+
+.air-datepicker-cell.-current- {
+  background: #c6f432 !important;
+  color: var(--color-ink, #111827) !important;
+}
+
+.air-datepicker-cell.-selected- {
+  background: #c6f432 !important;
+  color: var(--color-ink, #111827) !important;
+  border-radius: 50% !important;
+}
+
+.air-datepicker-cell.-selected-:hover {
+  background: #c6f432 !important;
 }

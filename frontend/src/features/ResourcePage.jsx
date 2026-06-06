@@ -206,23 +206,26 @@ const ResourcePage = forwardRef(function ResourcePage(
             <div className="flex items-center gap-1">
               {canView && (
                 <button
-                  className="btn-ghost !py-2"
+                  title="Lihat detail"
+                  className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800"
                   onClick={() => openView(row)}
                 >
-                  <Eye size={20} />
-                  <span className="hidden sm:inline">Lihat</span>
+                  <Eye size={16} />
                 </button>
               )}
               <button
-                className="btn-yellow !py-2"
+                title="Edit data"
+                className="rounded-lg p-1.5 text-amber-500 transition-colors hover:bg-amber-50 hover:text-amber-600"
                 onClick={() => openEdit(row)}
               >
-                <SquarePen size={20} />
-                <span className="hidden sm:inline">Edit</span>
+                <SquarePen size={16} />
               </button>
-              <button className="btn-red !py-2" onClick={() => openDelete(row)}>
-                <Trash2 size={20} />
-                <span className="hidden sm:inline">Hapus</span>
+              <button
+                title="Hapus data"
+                className="rounded-lg p-1.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                onClick={() => openDelete(row)}
+              >
+                <Trash2 size={16} />
               </button>
             </div>
           )}

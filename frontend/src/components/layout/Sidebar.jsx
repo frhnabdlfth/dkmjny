@@ -6,7 +6,7 @@ import {
   LayoutDashboard,
   Package,
   Wallet,
-  X
+  X,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 
@@ -34,12 +34,12 @@ export default function Sidebar({ isOpen, isMobileOpen, onCloseMobile }) {
       <div className="flex h-full min-h-0 flex-col">
         <div
           className={[
-            "flex h-20 shrink-0 items-center gap-3 border-b border-white/10 px-5",
+            "flex h-20 shrink-0 items-center gap-2 border-b border-white/10 px-5",
             !isOpen ? "lg:justify-center lg:px-0" : "",
           ].join(" ")}
         >
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-limey text-ink">
-            <span className="text-lg font-black">D</span>
+          <div className="flex h-11 w-11 shrink-0 items-center">
+            <img src="../../public/dkmjny.webp" alt="Logo" />
           </div>
 
           <div className={["min-w-0", !isOpen ? "lg:hidden" : ""].join(" ")}>

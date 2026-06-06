@@ -1,7 +1,6 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import {
   Menu,
-  Search,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
@@ -11,6 +10,8 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "./Sidebar";
 import { logout } from "../../lib/auth";
+import { api } from "../../lib/api";
+import toast from "react-hot-toast";
 
 const pageMeta = {
   "/dashboard": {
@@ -45,6 +46,9 @@ const pageMeta = {
 
 export default function AppShell() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const [profileOpen, setProfileOpen] = useState(false);
   const [logoutModal, setLogoutModal] = useState(false);
@@ -71,20 +75,14 @@ export default function AppShell() {
         setProfileOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const loadUserProfile = async () => {
     try {
-      const userId = localStorage.getItem("user_id");
-
-      const res = await api.get(`/user/${userId}`);
-
+      const res = await api.get("/auth/me");
+      setCurrentUser(res.data);
       setForm({
         username: res.data.username,
         email: res.data.email,
@@ -98,16 +96,20 @@ export default function AppShell() {
 
   const handleUpdateAccount = async () => {
     try {
-      await axios.put("http://localhost:8000/api/user/${userId}", {
-        username: accountForm.username,
-        email: accountForm.email,
-        password: accountForm.password || null,
+      setLoading(true);
+
+      await api.put(`/user/${currentUser.id}`, {
+        username: form.username,
+        email: form.email,
+        password: form.password || null,
       });
 
       toast.success("Akun berhasil diperbarui");
-      setAccountOpen(false);
+      setAccountModal(false);
     } catch (err) {
       toast.error(err.response?.data?.detail || "Gagal memperbarui akun");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -382,8 +384,13 @@ export default function AppShell() {
                   Batal
                 </button>
 
-                <button onClick={handleUpdateAccount} className="btn-primary">
-                  Simpan
+                <button
+                  type="button"
+                  onClick={handleUpdateAccount}
+                  disabled={loading}
+                  className="btn-primary"
+                >
+                  {loading ? "Menyimpan..." : "Simpan"}
                 </button>
               </div>
             </motion.div>

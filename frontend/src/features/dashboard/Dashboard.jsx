@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   DollarSign,
@@ -27,6 +27,13 @@ const cardMotion = {
   show: { opacity: 1, y: 0 },
 };
 
+const EMPTY_ARRAY = [];
+const EMPTY_SARPRAS = { bagus: 0, rusak: 0, perlu_diperbaiki: 0 };
+const EMPTY_FINANCE = { totalPemasukan: 0, totalPengeluaran: 0, sisaSaldo: 0 };
+
+const dashboardCache = { data: null, ts: 0 };
+const CACHE_TTL_MS = 60_000;
+
 const money = (v) =>
   new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -34,22 +41,39 @@ const money = (v) =>
     maximumFractionDigits: 0,
   }).format(v || 0);
 
-function parseDate(dateString) {
-  if (!dateString) return null;
+const formatYAxis = (value) => {
+  if (!value) return "Rp 0";
+  const abs = Math.abs(value);
+  const sign = value < 0 ? "-" : "";
+  if (abs >= 1_000_000_000_000) {
+    return `${sign}Rp ${+(abs / 1_000_000_000_000).toFixed(1)} T`;
+  }
+  if (abs >= 1_000_000_000) {
+    return `${sign}Rp ${+(abs / 1_000_000_000).toFixed(1)} M`;
+  }
+  if (abs >= 1_000_000) {
+    return `${sign}Rp ${+(abs / 1_000_000).toFixed(1)} Jt`;
+  }
+  if (abs >= 1_000) {
+    return `${sign}Rp ${+(abs / 1_000).toFixed(1)} Rb`;
+  }
+  return `${sign}Rp ${new Intl.NumberFormat("id-ID").format(abs)}`;
+};
 
-  const [year, month, day] = dateString.split("-").map(Number);
-
-  if (!year || !month || !day) return null;
-
-  return new Date(year, month - 1, day);
-}
+const formatTanggal = (tanggal) => {
+  if (!tanggal) return "-";
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(tanggal));
+};
 
 function formatDateKey(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 function getMonthLabel(date) {
@@ -59,34 +83,33 @@ function getMonthLabel(date) {
   }).format(date);
 }
 
+const isSameDate = (a, b) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+
 function buildCalendarDays(activeDate) {
   const year = activeDate.getFullYear();
   const month = activeDate.getMonth();
-
-  const firstDate = new Date(year, month, 1);
-  const lastDate = new Date(year, month + 1, 0);
-
-  const firstDayIndex = firstDate.getDay();
-  const totalDays = lastDate.getDate();
-
+  const first = new Date(year, month, 1);
+  const last = new Date(year, month + 1, 0);
   const days = [];
 
-  for (let index = 0; index < firstDayIndex; index += 1) {
-    days.push(null);
-  }
-
-  for (let day = 1; day <= totalDays; day += 1) {
-    days.push(new Date(year, month, day));
-  }
-
-  while (days.length % 7 !== 0) {
-    days.push(null);
-  }
+  for (let i = 0; i < first.getDay(); i++) days.push(null);
+  for (let d = 1; d <= last.getDate(); d++) days.push(new Date(year, month, d));
+  while (days.length % 7 !== 0) days.push(null);
 
   return days;
 }
 
-function StatCard({ icon: Icon, title, value, tone = "bg-limey", delay = 0 }) {
+// ─── StatCard ─────────────────────────────────────────────────────────────────
+const StatCard = memo(function StatCard({
+  icon: Icon,
+  title,
+  value,
+  tone = "bg-limey",
+  delay = 0,
+}) {
   return (
     <motion.div
       variants={cardMotion}
@@ -105,20 +128,15 @@ function StatCard({ icon: Icon, title, value, tone = "bg-limey", delay = 0 }) {
       <p className="text-3xl font-black text-ink">{value}</p>
     </motion.div>
   );
-}
+});
 
-function EventDetailModal({ date, events, onClose }) {
+// ─── EventDetailModal ─────────────────────────────────────────────────────────
+const EventDetailModal = memo(function EventDetailModal({
+  date,
+  events,
+  onClose,
+}) {
   if (!date || !events?.length) return null;
-  
-  const formatTanggal = (tanggal) => {
-    if (!tanggal) return "-";
-
-    return new Intl.DateTimeFormat("id-ID", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(new Date(tanggal));
-  };
 
   return (
     <AnimatePresence>
@@ -135,7 +153,7 @@ function EventDetailModal({ date, events, onClose }) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.92, y: 20 }}
           transition={{ duration: 0.25 }}
-          onMouseDown={(event) => event.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
         >
           <div className="mb-4 flex items-start justify-between gap-4">
             <div>
@@ -151,7 +169,6 @@ function EventDetailModal({ date, events, onClose }) {
                 }).format(date)}
               </h3>
             </div>
-
             <button
               type="button"
               onClick={onClose}
@@ -170,7 +187,8 @@ function EventDetailModal({ date, events, onClose }) {
               >
                 <p className="font-black text-ink">{event.kegiatan_dkm}</p>
                 <p className="mt-1 text-sm text-black/50">
-                  {formatTanggal(event.tanggal_kegiatan)} • {event.waktu_kegiatan}
+                  {formatTanggal(event.tanggal_kegiatan)} •{" "}
+                  {event.waktu_kegiatan}
                 </p>
               </motion.div>
             ))}
@@ -179,9 +197,47 @@ function EventDetailModal({ date, events, onClose }) {
       </motion.div>
     </AnimatePresence>
   );
-}
+});
 
-function RealCalendar({ schedules = [] }) {
+// ─── CalendarDay ──────────────────────────────────────────────────────────────
+const CalendarDay = memo(function CalendarDay({
+  date,
+  dateKey,
+  hasEvent,
+  eventCount,
+  isToday,
+  onSelect,
+}) {
+  const handleClick = useCallback(() => {
+    if (hasEvent) onSelect(date);
+  }, [hasEvent, date, onSelect]);
+
+  return (
+    <motion.button
+      type="button"
+      whileTap={{ scale: hasEvent ? 0.92 : 1 }}
+      onClick={handleClick}
+      className={[
+        "relative grid h-9 place-items-center rounded-full transition",
+        hasEvent
+          ? "bg-limey font-black text-ink shadow-sm hover:brightness-95 cursor-pointer"
+          : "bg-black/[0.03] text-ink hover:bg-black/[0.06] cursor-default",
+        isToday ? "font-black ring-2 ring-ink/20" : "",
+      ].join(" ")}
+      title={hasEvent ? "Klik untuk lihat detail kegiatan" : undefined}
+    >
+      {date.getDate()}
+      {hasEvent && (
+        <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-ink px-1 text-[9px] font-black text-white">
+          {eventCount}
+        </span>
+      )}
+    </motion.button>
+  );
+});
+
+// ─── RealCalendar ─────────────────────────────────────────────────────────────
+const RealCalendar = memo(function RealCalendar({ schedules = EMPTY_ARRAY }) {
   const today = useMemo(() => new Date(), []);
   const [activeDate, setActiveDate] = useState(today);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -194,61 +250,58 @@ function RealCalendar({ schedules = [] }) {
   const eventsByDate = useMemo(() => {
     return schedules.reduce((acc, item) => {
       if (!item.tanggal_kegiatan) return acc;
-
-      if (!acc[item.tanggal_kegiatan]) {
-        acc[item.tanggal_kegiatan] = [];
-      }
-
+      if (!acc[item.tanggal_kegiatan]) acc[item.tanggal_kegiatan] = [];
       acc[item.tanggal_kegiatan].push(item);
-
       return acc;
     }, {});
   }, [schedules]);
 
-  const selectedEvents = selectedDate
-    ? eventsByDate[formatDateKey(selectedDate)] || []
-    : [];
+  const selectedEvents = useMemo(
+    () =>
+      selectedDate
+        ? (eventsByDate[formatDateKey(selectedDate)] ?? EMPTY_ARRAY)
+        : EMPTY_ARRAY,
+    [selectedDate, eventsByDate],
+  );
 
-  const goToPreviousMonth = () => {
-    setActiveDate(
-      (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
-    );
-  };
+  const goToPrev = useCallback(
+    () => setActiveDate((p) => new Date(p.getFullYear(), p.getMonth() - 1, 1)),
+    [],
+  );
 
-  const goToNextMonth = () => {
-    setActiveDate(
-      (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
-    );
-  };
+  const goToNext = useCallback(
+    () => setActiveDate((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1)),
+    [],
+  );
 
-  const isSameDate = (firstDate, secondDate) => {
-    return (
-      firstDate.getFullYear() === secondDate.getFullYear() &&
-      firstDate.getMonth() === secondDate.getMonth() &&
-      firstDate.getDate() === secondDate.getDate()
-    );
-  };
+  const handleSelectDate = useCallback((date) => setSelectedDate(date), []);
+  const closeModal = useCallback(() => setSelectedDate(null), []);
 
   return (
     <>
-      <div className="card p-5">
+      <motion.div
+        variants={cardMotion}
+        initial="hidden"
+        animate="show"
+        transition={{ duration: 0.35, delay: 0.2 }}
+        className="card p-5"
+      >
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="font-black text-ink">Kalender Pengingat</h2>
             <p className="text-xs text-black/40">{getMonthLabel(activeDate)}</p>
           </div>
-
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={goToPreviousMonth}
+              onClick={goToPrev}
               className="grid h-8 w-8 place-items-center rounded-xl bg-black/[0.04] text-sm font-black transition hover:bg-black/[0.08]"
             >
               ‹
             </button>
             <button
               type="button"
-              onClick={goToNextMonth}
+              onClick={goToNext}
               className="grid h-8 w-8 place-items-center rounded-xl bg-black/[0.04] text-sm font-black transition hover:bg-black/[0.08]"
             >
               ›
@@ -264,107 +317,301 @@ function RealCalendar({ schedules = [] }) {
           ))}
 
           {calendarDays.map((date, index) => {
-            if (!date) {
-              return <span key={`empty-${index}`} className="h-9" />;
-            }
-
+            if (!date) return <span key={`empty-${index}`} className="h-9" />;
             const dateKey = formatDateKey(date);
-            const hasEvent = Boolean(eventsByDate[dateKey]?.length);
-            const isToday = isSameDate(date, today);
-
+            const eventsOnDay = eventsByDate[dateKey];
+            const hasEvent = Boolean(eventsOnDay?.length);
             return (
-              <motion.button
+              <CalendarDay
                 key={dateKey}
-                type="button"
-                whileTap={{ scale: hasEvent ? 0.92 : 1 }}
-                onClick={() => {
-                  if (hasEvent) {
-                    setSelectedDate(date);
-                  }
-                }}
-                className={[
-                  "relative grid h-9 place-items-center rounded-full transition",
-                  hasEvent
-                    ? "bg-limey font-black text-ink shadow-sm hover:brightness-95"
-                    : "bg-black/[0.03] text-ink hover:bg-black/[0.06]",
-                  isToday ? "font-black ring-2 ring-ink/20" : "",
-                  !hasEvent ? "cursor-default" : "cursor-pointer",
-                ].join(" ")}
-                title={
-                  hasEvent ? "Klik untuk lihat detail kegiatan" : undefined
-                }
-              >
-                {date.getDate()}
-
-                {hasEvent && (
-                  <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-ink px-1 text-[9px] font-black text-white">
-                    {eventsByDate[dateKey].length}
-                  </span>
-                )}
-              </motion.button>
+                date={date}
+                dateKey={dateKey}
+                hasEvent={hasEvent}
+                eventCount={eventsOnDay?.length ?? 0}
+                isToday={isSameDate(date, today)}
+                onSelect={handleSelectDate}
+              />
             );
           })}
         </div>
-      </div>
+      </motion.div>
 
       <EventDetailModal
         date={selectedDate}
         events={selectedEvents}
-        onClose={() => setSelectedDate(null)}
+        onClose={closeModal}
       />
     </>
   );
-}
+});
 
+// ─── FinanceChart ─────────────────────────────────────────────────────────────
+const LEGEND_KEYS = [
+  { key: "pemasukan", color: "#c6f432" },
+  { key: "pengeluaran", color: "#991B1B" },
+];
+
+const FinanceChart = memo(function FinanceChart({ chartData }) {
+  const [hiddenCharts, setHiddenCharts] = useState([]);
+
+  const handleLegendClick = useCallback((key) => {
+    setHiddenCharts((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    );
+  }, []);
+
+  return (
+    <motion.div
+      variants={cardMotion}
+      initial="hidden"
+      animate="show"
+      transition={{ duration: 0.35, delay: 0.2 }}
+      className="card p-4 sm:p-5"
+    >
+      <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        <h2 className="font-black text-ink">Chart Keuangan</h2>
+        <span className="w-fit rounded-full bg-black/5 px-3 py-1 text-xs font-bold">
+          Pemasukan vs Pengeluaran
+        </span>
+      </div>
+
+      <div className="h-72 min-w-0 sm:h-80 lg:h-96">
+        <ResponsiveContainer width="99%" height="99%">
+          <BarChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="tanggal"
+              tickFormatter={formatTanggal}
+              tick={{ fontSize: 11 }}
+            />
+            <YAxis
+              tick={{ fontSize: 11 }}
+              tickFormatter={formatYAxis}
+              width={80}
+            />
+            <Tooltip
+              formatter={(value, name) => [money(value), name]}
+              labelFormatter={formatTanggal}
+              labelStyle={{ fontWeight: "bold", marginBottom: 4 }}
+              contentStyle={{
+                borderRadius: 12,
+                border: "1px solid rgba(0,0,0,0.08)",
+                fontSize: 13,
+              }}
+            />
+            <Legend
+              content={() => (
+                <div className="mt-4 flex items-center justify-center gap-4">
+                  {LEGEND_KEYS.map(({ key, color }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleLegendClick(key)}
+                      className="flex items-center gap-2"
+                    >
+                      <span
+                        className="h-3 w-3"
+                        style={{ backgroundColor: color }}
+                      />
+                      <span
+                        style={{
+                          color: "#000",
+                          textDecoration: hiddenCharts.includes(key)
+                            ? "line-through"
+                            : "none",
+                          opacity: hiddenCharts.includes(key) ? 0.5 : 1,
+                        }}
+                      >
+                        {key}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            />
+            {!hiddenCharts.includes("pemasukan") && (
+              <Bar dataKey="pemasukan" fill="#c6f432" radius={[6, 6, 0, 0]} />
+            )}
+            {!hiddenCharts.includes("pengeluaran") && (
+              <Bar dataKey="pengeluaran" fill="#991B1B" radius={[6, 6, 0, 0]} />
+            )}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </motion.div>
+  );
+});
+
+// ─── RenovationList ───────────────────────────────────────────────────────────
+const RenovationList = memo(function RenovationList({ renovations }) {
+  const active = useMemo(
+    () => renovations.filter((item) => item.progress < 100),
+    [renovations],
+  );
+
+  return (
+    <motion.div
+      variants={cardMotion}
+      initial="hidden"
+      animate="show"
+      transition={{ duration: 0.35, delay: 0.25 }}
+      className="card p-4 sm:p-5"
+    >
+      <h2 className="mb-4 font-black text-ink">Progress Renovasi</h2>
+      <div className="space-y-4">
+        {active.length ? (
+          active.map((item, index) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.25, delay: 0.05 * index }}
+              className="flex flex-col gap-3 rounded-2xl bg-black/[0.02] p-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="min-w-0">
+                <p className="break-words font-bold text-ink">
+                  {item.jenis_perbaikan}
+                </p>
+                <p className="text-xs text-black/50">
+                  {formatTanggal(item.tanggal_perbaikan)}
+                </p>
+              </div>
+              <ProgressBar value={item.progress} />
+            </motion.div>
+          ))
+        ) : (
+          <p className="rounded-2xl bg-black/[0.02] p-4 text-sm text-black/50">
+            Belum ada data renovasi.
+          </p>
+        )}
+      </div>
+    </motion.div>
+  );
+});
+
+// ─── ScheduleList ─────────────────────────────────────────────────────────────
+const ScheduleList = memo(function ScheduleList({ schedules }) {
+  return (
+    <motion.div
+      variants={cardMotion}
+      initial="hidden"
+      animate="show"
+      transition={{ duration: 0.35, delay: 0.35 }}
+      className="card p-5"
+    >
+      <div className="mb-4 flex items-center gap-2">
+        <CalendarDays size={18} />
+        <h2 className="font-black text-ink">Schedule Kegiatan</h2>
+      </div>
+      <div className="space-y-3">
+        {schedules.length ? (
+          schedules.map((item, index) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: 0.04 * index }}
+              className="rounded-2xl bg-black/[0.03] p-4"
+            >
+              <p className="break-words font-bold text-ink">
+                {item.kegiatan_dkm}
+              </p>
+              <p className="text-xs text-black/50">
+                {formatTanggal(item.tanggal_kegiatan)} • {item.waktu_kegiatan}
+              </p>
+            </motion.div>
+          ))
+        ) : (
+          <p className="rounded-2xl bg-black/[0.03] p-4 text-sm text-black/50">
+            Belum ada kegiatan.
+          </p>
+        )}
+      </div>
+    </motion.div>
+  );
+});
+
+// ─── SaldoCard ────────────────────────────────────────────────────────────────
+const SaldoCard = memo(function SaldoCard({ financeSummary }) {
+  return (
+    <motion.div
+      variants={cardMotion}
+      initial="hidden"
+      animate="show"
+      transition={{ duration: 0.35, delay: 0.3 }}
+      className={`card hidden p-5 text-black lg:block ${
+        financeSummary.sisaSaldo >= 0 ? "bg-limey" : "bg-orange-600"
+      }`}
+    >
+      <div className="mb-3 grid h-11 w-11 place-items-center rounded-2xl bg-ink text-gray-50">
+        <DollarSign size={20} />
+      </div>
+      <h3 className="text-xl font-black">Sisa Saldo</h3>
+      <p className="text-2xl font-black">{money(financeSummary.sisaSaldo)}</p>
+      <p className="mt-3 text-xs text-ink">
+        Masuk: {money(financeSummary.totalPemasukan)}
+      </p>
+      <p className="text-xs text-ink">
+        Keluar: {money(financeSummary.totalPengeluaran)}
+      </p>
+    </motion.div>
+  );
+});
+
+// ─── Dashboard (root) ─────────────────────────────────────────────────────────
 export default function Dashboard() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    api
-      .get("/dashboard")
-      .then((res) => setData(res.data))
-      .catch(() => setData(null));
+    const controller = new AbortController();
+
+    const load = async () => {
+      if (
+        dashboardCache.data &&
+        Date.now() - dashboardCache.ts < CACHE_TTL_MS
+      ) {
+        setData(dashboardCache.data);
+        return;
+      }
+
+      try {
+        const res = await api.get("/dashboard", { signal: controller.signal });
+        dashboardCache.data = res.data;
+        dashboardCache.ts = Date.now();
+        setData(res.data);
+      } catch (err) {
+        if (err.name !== "AbortError" && err.name !== "CanceledError") {
+          setData(null);
+        }
+      }
+    };
+
+    load();
+
+    return () => controller.abort();
   }, []);
 
-  const summary = data?.sarpras || {
-    bagus: 0,
-    rusak: 0,
-    perlu_diperbaiki: 0,
-  };
-
-  const schedules = data?.schedules || [];
+  const summary = data?.sarpras ?? EMPTY_SARPRAS;
+  const schedules = data?.schedules ?? EMPTY_ARRAY;
+  const renovations = data?.renovations ?? EMPTY_ARRAY;
+  const chartData = data?.finance_chart ?? EMPTY_ARRAY;
 
   const financeSummary = useMemo(() => {
-    const chart = data?.finance_chart || [];
-    const totalPemasukan = chart.reduce(
-      (sum, item) => sum + (item.pemasukan || 0),
+    if (!chartData.length) return EMPTY_FINANCE;
+    const totalPemasukan = chartData.reduce(
+      (s, i) => s + (i.pemasukan || 0),
       0,
     );
-    const totalPengeluaran = chart.reduce(
-      (sum, item) => sum + (item.pengeluaran || 0),
+    const totalPengeluaran = chartData.reduce(
+      (s, i) => s + (i.pengeluaran || 0),
       0,
     );
-    const sisaSaldo = totalPemasukan - totalPengeluaran;
-    return { totalPemasukan, totalPengeluaran, sisaSaldo };
-  }, [data?.finance_chart]);
-
-  const [hiddenCharts, setHiddenCharts] = useState([]);
-
-  const handleLegendClick = (key) => {
-    setHiddenCharts((prev) =>
-      prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key],
-    );
-  };
-
-  const formatTanggal = (tanggal) => {
-    if (!tanggal) return "-";
-
-    return new Intl.DateTimeFormat("id-ID", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(new Date(tanggal));
-  };
+    return {
+      totalPemasukan,
+      totalPengeluaran,
+      sisaSaldo: totalPemasukan - totalPengeluaran,
+    };
+  }, [chartData]);
 
   return (
     <motion.div
@@ -397,211 +644,14 @@ export default function Dashboard() {
           />
         </div>
 
-        <motion.div
-          variants={cardMotion}
-          initial="hidden"
-          animate="show"
-          transition={{ duration: 0.35, delay: 0.2 }}
-          className="card p-4 sm:p-5"
-        >
-          <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <h2 className="font-black text-ink">Chart Keuangan</h2>
-            <span className="w-fit rounded-full bg-black/5 px-3 py-1 text-xs font-bold">
-              Pemasukan vs Pengeluaran
-            </span>
-          </div>
-
-          <div className="h-72 min-w-0 sm:h-80 lg:h-96">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={data?.finance_chart || []}
-                margin={{ left: -10, right: -1 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="tanggal" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Legend
-                  content={() => (
-                    <div className="mt-4 flex items-center justify-center gap-4">
-                      <button
-                        type="button"
-                        onClick={() => handleLegendClick("pemasukan")}
-                        className="flex items-center gap-2"
-                      >
-                        <span className="h-3 w-3 bg-[#c6f432]" />
-                        <span
-                          style={{
-                            color: "#000",
-                            textDecoration: hiddenCharts.includes("pemasukan")
-                              ? "line-through"
-                              : "none",
-                            opacity: hiddenCharts.includes("pemasukan")
-                              ? 0.5
-                              : 1,
-                          }}
-                        >
-                          pemasukan
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleLegendClick("pengeluaran")}
-                        className="flex items-center gap-2"
-                      >
-                        <span className="h-3 w-3 bg-[#991B1B]" />
-                        <span
-                          style={{
-                            color: "#000",
-                            textDecoration: hiddenCharts.includes("pengeluaran")
-                              ? "line-through"
-                              : "none",
-                            opacity: hiddenCharts.includes("pengeluaran")
-                              ? 0.5
-                              : 1,
-                          }}
-                        >
-                          pengeluaran
-                        </span>
-                      </button>
-                    </div>
-                  )}
-                />
-                {!hiddenCharts.includes("pemasukan") && (
-                  <Bar
-                    dataKey="pemasukan"
-                    fill="#c6f432"
-                    radius={[6, 6, 0, 0]}
-                  />
-                )}
-
-                {!hiddenCharts.includes("pengeluaran") && (
-                  <Bar
-                    dataKey="pengeluaran"
-                    fill="#991B1B"
-                    radius={[6, 6, 0, 0]}
-                  />
-                )}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-
-        <motion.div
-          variants={cardMotion}
-          initial="hidden"
-          animate="show"
-          transition={{ duration: 0.35, delay: 0.25 }}
-          className="card p-4 sm:p-5"
-        >
-          <h2 className="mb-4 font-black text-ink">Progress Renovasi</h2>
-
-          <div className="space-y-4">
-            {(data?.renovations || []).filter((item) => item.progress < 100)
-              .length ? (
-              data.renovations
-                .filter((item) => item.progress < 100)
-                .map((item, index) => (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, x: -12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.25, delay: 0.05 * index }}
-                    className="flex flex-col gap-3 rounded-2xl bg-black/[0.02] p-4 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0">
-                      <p className="break-words font-bold text-ink">
-                        {item.jenis_perbaikan}
-                      </p>
-                      <p className="text-xs text-black/50">
-                        {formatTanggal(item.tanggal_perbaikan)}
-                      </p>
-                    </div>
-
-                    <ProgressBar value={item.progress} />
-                  </motion.div>
-                ))
-            ) : (
-              <p className="rounded-2xl bg-black/[0.02] p-4 text-sm text-black/50">
-                Belum ada data renovasi.
-              </p>
-            )}
-          </div>
-        </motion.div>
+        <FinanceChart chartData={chartData} />
+        <RenovationList renovations={renovations} />
       </section>
 
       <aside className="min-w-0 space-y-5">
-        <motion.div
-          variants={cardMotion}
-          initial="hidden"
-          animate="show"
-          transition={{ duration: 0.35, delay: 0.3 }}
-          className={`card hidden p-5 text-black lg:block ${
-            financeSummary.sisaSaldo >= 0 ? "bg-limey" : "bg-orange-600"
-          }`}
-        >
-          <div className="mb-3 grid h-11 w-11 place-items-center rounded-2xl bg-ink text-gray-50">
-            <DollarSign size={20} />
-          </div>
-          <h3 className="text-xl font-black">Sisa Saldo</h3>
-          <p className="text-2xl font-black">
-            {money(financeSummary.sisaSaldo)}
-          </p>
-          <p className="mt-3 text-xs text-ink">
-            Masuk: {money(financeSummary.totalPemasukan)}
-          </p>
-          <p className="text-xs text-ink">
-            Keluar: {money(financeSummary.totalPengeluaran)}
-          </p>
-        </motion.div>
-
-        <motion.div
-          variants={cardMotion}
-          initial="hidden"
-          animate="show"
-          transition={{ duration: 0.35, delay: 0.35 }}
-          className="card p-5"
-        >
-          <div className="mb-4 flex items-center gap-2">
-            <CalendarDays size={18} />
-            <h2 className="font-black text-ink">Schedule Kegiatan</h2>
-          </div>
-
-          <div className="space-y-3">
-            {schedules.length ? (
-              schedules.map((item, index) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, delay: 0.04 * index }}
-                  className="rounded-2xl bg-black/[0.03] p-4"
-                >
-                  <p className="break-words font-bold text-ink">
-                    {item.kegiatan_dkm}
-                  </p>
-                  <p className="text-xs text-black/50">
-                    {formatTanggal(item.tanggal_kegiatan)} • {item.waktu_kegiatan}
-                  </p>
-                </motion.div>
-              ))
-            ) : (
-              <p className="rounded-2xl bg-black/[0.03] p-4 text-sm text-black/50">
-                Belum ada kegiatan.
-              </p>
-            )}
-          </div>
-        </motion.div>
-
-        <motion.div
-          variants={cardMotion}
-          initial="hidden"
-          animate="show"
-          transition={{ duration: 0.35, delay: 0.4 }}
-        >
-          <RealCalendar schedules={schedules} />
-        </motion.div>
+        <SaldoCard financeSummary={financeSummary} />
+        <ScheduleList schedules={schedules} />
+        <RealCalendar schedules={schedules} />
       </aside>
     </motion.div>
   );

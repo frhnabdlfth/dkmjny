@@ -9,13 +9,21 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/material": "^9.0.1",
+    "@mui/x-date-pickers": "^9.4.0",
+    "@tanstack/react-query": "^5.101.0",
     "@vitejs/plugin-react": "latest",
     "air-datepicker": "^3.6.0",
     "axios": "latest",
+    "date-fns": "^4.4.0",
+    "dayjs": "^1.11.21",
     "framer-motion": "^12.40.0",
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.16.0",
     "recharts": "latest",
     "vite": "latest"

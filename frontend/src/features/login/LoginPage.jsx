@@ -10,12 +10,13 @@ export default function Login() {
   const authUser = getAuthUser();
 
   const [form, setForm] = useState({
-    email: "admin@dkmjny.com",
-    password: "admin123",
+    email: "",
+    password: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   if (authUser) {
     return <Navigate to="/dashboard" replace />;
@@ -32,14 +33,18 @@ export default function Login() {
     setError("");
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setLoading(true);
+    setError("");
 
     try {
-      login(form.email, form.password);
+      await login(form.email, form.password);
       navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err.message || "Login gagal");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -77,8 +82,8 @@ export default function Login() {
         </motion.div>
 
         <div className="relative z-10 rounded-[32px] border border-white/10 bg-white/10 p-5 backdrop-blur">
-          <p className="text-sm text-white/60">Login dummy</p>
-          <p className="mt-1 font-bold">admin@dkmjny.com / admin123</p>
+          <p className="text-sm text-white/60">Sistem Manajemen DKM</p>
+          <p className="mt-1 font-bold">Login dengan akun admin Anda</p>
         </div>
       </section>
 
@@ -113,19 +118,20 @@ export default function Login() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <label className="block">
                 <span className="mb-2 block text-sm font-bold text-ink">
-                  Email
+                  Email / Username
                 </span>
 
                 <div className="flex items-center gap-3 rounded-2xl border border-black/10 bg-soft px-4 py-3 focus-within:border-limey">
                   <Mail size={18} className="text-black/40" />
                   <input
-                    type="email"
+                    type="text"
                     name="email"
                     value={form.email}
                     onChange={handleChange}
-                    placeholder="Masukkan email"
+                    placeholder="Masukkan email atau username"
                     className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-black/30"
                     required
+                    disabled={loading}
                   />
                 </div>
               </label>
@@ -145,6 +151,7 @@ export default function Login() {
                     placeholder="Masukkan password"
                     className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-black/30"
                     required
+                    disabled={loading}
                   />
 
                   <button
@@ -159,19 +166,24 @@ export default function Login() {
 
               <motion.button
                 type="submit"
-                className="mt-2 w-full rounded-2xl bg-limey px-5 py-3.5 text-sm font-black text-ink shadow-sm transition hover:brightness-95"
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.97 }}
+                className="mt-2 w-full rounded-2xl bg-limey px-5 py-3.5 text-sm font-black text-ink shadow-sm transition hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={loading ? {} : { y: -2 }}
+                whileTap={loading ? {} : { scale: 0.97 }}
+                disabled={loading}
               >
-                Masuk Dashboard
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Memproses...
+                  </span>
+                ) : (
+                  "Masuk Dashboard"
+                )}
               </motion.button>
             </form>
-
-            <div className="mt-5 rounded-2xl bg-black/[0.03] p-4 text-xs text-black/50">
-              <p className="font-bold text-ink">User dummy:</p>
-              <p>Email: admin@dkmjny.com</p>
-              <p>Password: admin123</p>
-            </div>
           </div>
         </motion.div>
       </section>

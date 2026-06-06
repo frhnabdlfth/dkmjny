@@ -1,28 +1,50 @@
-import { useCallback, useEffect, useState } from 'react'
-import { createResource, deleteResource, listResource, updateResource } from '../lib/api'
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  createResource,
+  deleteResource,
+  listResource,
+  updateResource,
+} from "../lib/api";
 
 export function useCrud(path) {
-  const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const queryClient = useQueryClient();
 
-  const fetchItems = useCallback(async () => {
-    try {
-      setLoading(true)
-      setItems(await listResource(path))
-      setError('')
-    } catch (err) {
-      setError(err?.response?.data?.detail || 'Gagal mengambil data')
-    } finally {
-      setLoading(false)
-    }
-  }, [path])
+  const {
+    data: items = [],
+    isLoading: loading,
+    error: queryError,
+    refetch: fetchItems,
+  } = useQuery({
+    queryKey: [path],
+    queryFn: () => listResource(path),
+  });
 
-  useEffect(() => { fetchItems() }, [fetchItems])
+  const error = queryError
+    ? queryError?.response?.data?.detail || "Gagal mengambil data"
+    : "";
 
-  const createItem = async (payload) => { await createResource(path, payload); await fetchItems() }
-  const updateItem = async (id, payload) => { await updateResource(path, id, payload); await fetchItems() }
-  const removeItem = async (id) => { await deleteResource(path, id); await fetchItems() }
+  const createMutation = useMutation({
+    mutationFn: (payload) => createResource(path, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [path] }),
+  });
 
-  return { items, loading, error, fetchItems, createItem, updateItem, removeItem }
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }) => updateResource(path, id, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [path] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => deleteResource(path, id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [path] }),
+  });
+
+  return {
+    items,
+    loading,
+    error,
+    fetchItems,
+    createItem: createMutation.mutateAsync,
+    updateItem: (id, payload) => updateMutation.mutateAsync({ id, payload }),
+    removeItem: deleteMutation.mutateAsync,
+  };
 }

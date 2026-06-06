@@ -1,3 +1,4 @@
+import toast from "react-hot-toast";
 import Modal from "../ui/Modal";
 
 export default function DeleteModal({
@@ -7,10 +8,24 @@ export default function DeleteModal({
   onClose,
   onConfirm,
 }) {
+  const handleDelete = async () => {
+    try {
+      await onConfirm();
+
+      toast.success("Data berhasil dihapus");
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.detail ||
+          error?.message ||
+          "Gagal menghapus data",
+      );
+    }
+  };
+
   return (
     <Modal open={open} title={title} onClose={onClose}>
-      <p className="mb-3 text-xl text-red-800">
-        Yakin mau menghapus <b className="text-ink">{label}</b>?
+      <p className="mb-1 text-xl text-ink">
+        Yakin mau menghapus <span className="font-bold">{label}</span>?
       </p>
       <p className="mb-3 text-sm text-black/60">
         Data yang dihapus tidak bisa dikembalikan.
@@ -19,7 +34,10 @@ export default function DeleteModal({
         <button className="btn-ghost w-full sm:w-auto" onClick={onClose}>
           Batal
         </button>
-        <button className="btn-red bold w-full sm:w-auto" onClick={onConfirm}>
+        <button
+          className="btn-red bold w-full sm:w-auto"
+          onClick={handleDelete}
+        >
           Hapus
         </button>
       </div>
