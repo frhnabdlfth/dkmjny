@@ -117,15 +117,27 @@ const StatCard = memo(function StatCard({
       animate="show"
       transition={{ duration: 0.35, delay }}
       whileHover={{ y: -4 }}
-      className="card p-4 sm:p-5"
+      className="card relative overflow-hidden p-4 sm:p-5"
     >
+      {/* Dekorasi blur di pojok */}
       <div
-        className={`mb-4 grid h-12 w-12 place-items-center rounded-2xl ${tone}`}
-      >
-        <Icon size={20} />
+        className={`pointer-events-none absolute -right-5 -top-5 h-24 w-24 rounded-full blur-2xl opacity-20 ${tone}`}
+      />
+
+      {/* Icon kiri + angka kanan */}
+      <div className="relative mb-3 flex items-center justify-between gap-3">
+        <div
+          className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl shadow-sm ${tone}`}
+        >
+          <Icon size={22} />
+        </div>
+        <p className="text-4xl font-black tabular-nums text-ink">{value}</p>
       </div>
-      <p className="text-sm text-black/50">{title}</p>
-      <p className="text-3xl font-black text-ink">{value}</p>
+
+      {/* Garis tipis + judul */}
+      <div className="relative border-t border-black/5 pt-3">
+        <p className="text-sm font-semibold text-black/50">{title}</p>
+      </div>
     </motion.div>
   );
 });
