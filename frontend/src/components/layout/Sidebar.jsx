@@ -86,77 +86,10 @@ export default function Sidebar({ isOpen, isMobileOpen, onCloseMobile }) {
               </NavLink>
             );
           })}
-        </nav> 
-        
-        <div className="shrink-0 px-4 pb-6 pt-2">
-          <div className={[!isOpen ? "lg:hidden" : ""].join(" ")}>
-            <div className="w-full rounded-3xl bg-limey p-4 text-ink">
-              <p className="text-sm font-black">DKMJNY Digital</p>
-              <p className="mt-1 text-xs text-ink/70">
-                Kelola masjid lebih cepat dan rapi.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </aside>
-  );
-                }            "flex h-20 shrink-0 items-center gap-2 border-b border-white/10 px-5",
-            !isOpen ? "lg:justify-center lg:px-0" : "",
-          ].join(" ")}
-        >
-          <div className="flex h-11 w-11 shrink-0 items-center">
-            <img src="/dkmjny.webp" alt="Logo" />
-          </div>
-
-          <div className={["min-w-0", !isOpen ? "lg:hidden" : ""].join(" ")}>
-            <h2 className="truncate text-lg font-black">DKMJNY</h2>
-            <p className="truncate text-xs text-white/50">Digital Masjid</p>
-          </div>
-
-          <button
-            type="button"
-            onClick={onCloseMobile}
-            aria-label="Tutup menu"
-            className="ml-auto flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 transition hover:bg-white/15 lg:hidden"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <nav className="flex-1 space-y-2 overflow-y-auto px-4 py-5">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                onClick={onCloseMobile}
-                title={!isOpen ? item.label : undefined}
-                className={({ isActive }) =>
-                  [
-                    "group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-bold transition",
-                    isActive
-                      ? "bg-limey text-ink"
-                      : "text-white/70 hover:bg-white/10 hover:text-white",
-                    !isOpen ? "lg:justify-center lg:px-0" : "",
-                  ].join(" ")
-                }
-              >
-                <Icon size={21} className="shrink-0" />
-                <span
-                  className={["truncate", !isOpen ? "lg:hidden" : ""].join(" ")}
-                >
-                  {item.label}
-                </span>
-              </NavLink>
-            );
-          })}
         </nav>
 
-        <div className="shrink-0 px-4 py-4">
-          <div className={["mt-4", !isOpen ? "lg:hidden" : ""].join(" ")}>
+        <div className="shrink-0 px-4 pb-6 pt-2">
+          <div className={[!isOpen ? "lg:hidden" : ""].join(" ")}>
             <div className="w-full rounded-3xl bg-limey p-4 text-ink">
               <p className="text-sm font-black">DKMJNY Digital</p>
               <p className="mt-1 text-xs text-ink/70">
