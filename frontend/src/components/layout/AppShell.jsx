@@ -1,4 +1,3 @@
-import { useMemo, useState, useRef, useEffect } from "react";
 import { useState, useRef, useEffect } from "react";
 import { Menu, PanelLeftClose, PanelLeftOpen, Settings, LogOut, Download } from "lucide-react";
 import { Outlet, useNavigate } from "react-router-dom";
