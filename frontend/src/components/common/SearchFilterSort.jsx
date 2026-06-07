@@ -34,10 +34,10 @@ export default function SearchFilterSort({
           <select
             value={sortValue}
             onChange={(e) => onSortChange(e.target.value)}
-            className="h-11 w-11 sm:w-auto pl-9 sm:pr-8 rounded-xl border border-gray-300 bg-gray-50 appearance-none cursor-pointer"
+            className="h-11 w-11 sm:w-auto pl-9 sm:pr-8 rounded-xl border border-gray-300 bg-gray-50 appearance-none cursor-pointer text-transparent sm:text-gray-800"
           >
             {sortOptions.map((option) => (
-              <option key={option.value} value={option.value}>
+              <option key={option.value} value={option.value} className="text-gray-800">
                 {option.label}
               </option>
             ))}
@@ -55,13 +55,13 @@ export default function SearchFilterSort({
           <select
             value={filterValue}
             onChange={(e) => onFilterChange(e.target.value)}
-            className="h-11 w-11 sm:w-auto pl-9 sm:pr-8 rounded-xl border border-gray-300 bg-gray-50 appearance-none cursor-pointer"
+            className="h-11 w-11 sm:w-auto pl-9 sm:pr-8 rounded-xl border border-gray-300 bg-gray-50 appearance-none cursor-pointer text-transparent sm:text-gray-800"
           >
-            <option value="">Semua Data</option>
+            <option value="" className="text-gray-800">Semua Data</option>
             {filterOptions.map((group) => (
               <optgroup key={group.label} label={group.label}>
                 {group.options.map((option) => (
-                  <option key={option.value} value={option.value}>
+                  <option key={option.value} value={option.value} className="text-gray-800">
                     {option.label}
                   </option>
                 ))}
