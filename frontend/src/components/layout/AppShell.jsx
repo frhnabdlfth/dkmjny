@@ -1,12 +1,7 @@
 import { useMemo, useState, useRef, useEffect } from "react";
-import {
-  Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Settings,
-  LogOut,
-} from "lucide-react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { Menu, PanelLeftClose, PanelLeftOpen, Settings, LogOut, Download } from "lucide-react";
+import { Outlet, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "./Sidebar";
 import { logout } from "../../lib/auth";
@@ -15,7 +10,6 @@ import toast from "react-hot-toast";
 
 export default function AppShell() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -87,7 +81,62 @@ export default function AppShell() {
     navigate("/login", { replace: true });
   };
 
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+useEffect(() => {
+  const handler = (e) => {
+    e.preventDefault();
+    setDeferredPrompt(e);
+    setShowInstallBanner(true);
+  };
+  const onInstalled = () => setShowInstallBanner(false);
+
+  window.addEventListener("beforeinstallprompt", handler);
+  window.addEventListener("appinstalled", onInstalled);
+  return () => {
+    window.removeEventListener("beforeinstallprompt", handler);
+    window.removeEventListener("appinstalled", onInstalled);
+  };
+}, []);
+
+const handleInstall = async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === "accepted") setShowInstallBanner(false);
+  setDeferredPrompt(null);
+};
+
   return (
+    {showInstallBanner && (
+  <div className="fixed top-0 left-0 right-0 z-50 flex h-12 items-center justify-between gap-3 bg-gradient-to-r from-limey to-emerald-400 px-4 sm:px-6 lg:px-8">
+    <div className="flex min-w-0 items-center gap-2.5">
+      <span className="shrink-0 text-lg">🕌</span>
+      <p className="truncate text-sm font-semibold text-gray-900">
+        <span className="hidden sm:inline">Kelola masjid lebih mudah — </span>
+        Install aplikasi DKMJNY di perangkat Anda!
+      </p>
+    </div>
+    <div className="flex shrink-0 items-center gap-2">
+      <button
+        onClick={handleInstall}
+        className="flex items-center gap-1.5 rounded-xl bg-gray-900 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-gray-800"
+      >
+        <Download size={13} />
+        Install
+      </button>
+      <button
+        onClick={() => setShowInstallBanner(false)}
+        aria-label="Tutup"
+        className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-800 transition hover:bg-black/10 text-lg leading-none"
+      >
+        ×
+      </button>
+    </div>
+  </div>
+)}
+
     <div className="min-h-screen w-full overflow-x-hidden bg-gray-100 text-ink">
       {mobileSidebarOpen && (
         <button
@@ -106,16 +155,17 @@ export default function AppShell() {
 
       <div
         className={[
-          "flex min-h-screen w-full min-w-0 flex-col transition-[padding] duration-300 ease-in-out pt-20",
+          "flex min-h-screen w-full min-w-0 flex-col transition-[padding] duration-300 ease-in-out", showInstallBanner ? "pt-32" : "pt-20",
           sidebarOpen ? "lg:pl-[280px]" : "lg:pl-[88px]",
         ].join(" ")}
       >
         <header
           className={[
-            "fixed top-0 right-0 z-30 border-b border-black/5 bg-gray-100/50 backdrop-blur-xl",
-            "left-0 transition-[left] duration-300 ease-in-out",
-            sidebarOpen ? "lg:left-[280px]" : "lg:left-[88px]",
-          ].join(" ")}
+  "fixed right-0 z-30 border-b border-black/5 bg-gray-100/50 backdrop-blur-xl",
+  "left-0 transition-[left,top] duration-300 ease-in-out",
+  showInstallBanner ? "top-12" : "top-0",
+  sidebarOpen ? "lg:left-[280px]" : "lg:left-[88px]",
+].join(" ")}
         >
           <div className="flex min-h-20 w-full items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
             <div className="flex min-w-0 items-center gap-3">
@@ -154,7 +204,6 @@ export default function AppShell() {
                   onClick={() => setProfileOpen(!profileOpen)}
                   className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-limey to-pink-200 font-black shadow-sm uppercase"
                 >
-                  {/* Sekalian dibikin dinamis: Inisial huruf pertama dari username */}
                   {currentUser?.username ? currentUser.username.charAt(0) : "A"}
                 </button>
 
