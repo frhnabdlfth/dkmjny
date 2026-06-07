@@ -109,7 +109,8 @@ const handleInstall = async () => {
 };
 
   return (
-    {showInstallBanner && (
+    <div className="min-h-screen w-full overflow-x-hidden bg-gray-100 text-ink">
+      {showInstallBanner && (
   <div className="fixed top-0 left-0 right-0 z-50 flex h-12 items-center justify-between gap-3 bg-gradient-to-r from-limey to-emerald-400 px-4 sm:px-6 lg:px-8">
     <div className="flex min-w-0 items-center gap-2.5">
       <span className="shrink-0 text-lg">🕌</span>
@@ -136,8 +137,6 @@ const handleInstall = async () => {
     </div>
   </div>
 )}
-
-    <div className="min-h-screen w-full overflow-x-hidden bg-gray-100 text-ink">
       {mobileSidebarOpen && (
         <button
           type="button"
