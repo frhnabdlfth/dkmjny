@@ -3,20 +3,18 @@ import { ArrowUpDown, Funnel, Search } from "lucide-react";
 export default function SearchFilterSort({
   search,
   onSearchChange,
-
   filterValue,
   onFilterChange,
   filterOptions = [],
-
   sortValue,
   onSortChange,
   sortOptions = [],
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-3">
-      <div className="flex-1 min-w-[250px] flex items-center h-11 rounded-xl border border-gray-300 bg-gray-50 px-4 gap-2">
-        <Search size={18} className="text-gray-500" />
-
+    <div className="mb-6 flex items-center gap-3">
+      {/* Search */}
+      <div className="flex-1 min-w-0 flex items-center h-11 rounded-xl border border-gray-300 bg-gray-50 px-4 gap-2">
+        <Search size={18} className="text-gray-500 shrink-0" />
         <input
           type="text"
           placeholder="Cari data..."
@@ -28,16 +26,15 @@ export default function SearchFilterSort({
 
       {/* Sort */}
       {sortOptions.length > 0 && (
-        <div className="relative">
+        <div className="relative shrink-0">
           <ArrowUpDown
             size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
           />
-
           <select
             value={sortValue}
             onChange={(e) => onSortChange(e.target.value)}
-            className="h-11 pl-9 pr-8 rounded-xl border border-gray-300 bg-gray-50 appearance-none cursor-pointer"
+            className="h-11 w-11 sm:w-auto pl-9 sm:pr-8 rounded-xl border border-gray-300 bg-gray-50 appearance-none cursor-pointer"
           >
             {sortOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -50,19 +47,17 @@ export default function SearchFilterSort({
 
       {/* Filter */}
       {filterOptions.length > 0 && (
-        <div className="relative">
+        <div className="relative shrink-0">
           <Funnel
             size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
           />
-
           <select
             value={filterValue}
             onChange={(e) => onFilterChange(e.target.value)}
-            className="h-11 pl-9 pr-8 rounded-xl border border-gray-300 bg-gray-50 appearance-none cursor-pointer"
+            className="h-11 w-11 sm:w-auto pl-9 sm:pr-8 rounded-xl border border-gray-300 bg-gray-50 appearance-none cursor-pointer"
           >
             <option value="">Semua Data</option>
-
             {filterOptions.map((group) => (
               <optgroup key={group.label} label={group.label}>
                 {group.options.map((option) => (
