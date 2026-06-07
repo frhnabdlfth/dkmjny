@@ -491,6 +491,31 @@ const RenovationList = memo(function RenovationList({ renovations }) {
 
 // ─── ScheduleList ─────────────────────────────────────────────────────────────
 const ScheduleList = memo(function ScheduleList({ schedules }) {
+  const todayStart = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
+  const sorted = useMemo(() => {
+    return [...schedules].sort((a, b) => {
+      const diffA = new Date(a.tanggal_kegiatan) - todayStart;
+      const diffB = new Date(b.tanggal_kegiatan) - todayStart;
+      const futureA = diffA >= 0;
+      const futureB = diffB >= 0;
+      if (futureA && futureB) return diffA - diffB;
+      if (!futureA && !futureB) return diffB - diffA;
+      return futureA ? -1 : 1;
+    });
+  }, [schedules, todayStart]);
+
+  const nearestId = useMemo(
+    () =>
+      sorted.find((item) => new Date(item.tanggal_kegiatan) >= todayStart)
+        ?.id ?? null,
+    [sorted, todayStart],
+  );
+
   return (
     <motion.div
       variants={cardMotion}
@@ -504,23 +529,47 @@ const ScheduleList = memo(function ScheduleList({ schedules }) {
         <h2 className="font-black text-ink">Schedule Kegiatan</h2>
       </div>
       <div className="space-y-3">
-        {schedules.length ? (
-          schedules.map((item, index) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay: 0.04 * index }}
-              className="rounded-2xl bg-black/[0.03] p-4"
-            >
-              <p className="break-words font-bold text-ink">
-                {item.kegiatan_dkm}
-              </p>
-              <p className="text-xs text-black/50">
-                {formatTanggal(item.tanggal_kegiatan)} • {item.waktu_kegiatan}
-              </p>
-            </motion.div>
-          ))
+        {sorted.length ? (
+          sorted.map((item, index) => {
+            const isUpcoming = new Date(item.tanggal_kegiatan) >= todayStart;
+            const isNearest = item.id === nearestId;
+
+            return (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: 0.04 * index }}
+                className={`rounded-2xl p-4 ${
+                  isUpcoming ? "bg-gray-50" : "bg-black/[0.03]"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="break-words font-bold text-ink">
+                    {item.kegiatan_dkm}
+                  </p>
+                  {isNearest && (
+                    <span className="shrink-0 rounded-full bg-limey px-2.5 py-0.5 text-[10px] font-black text-ink">
+                      Terdekat
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-1 flex items-center gap-1.5">
+                  {isUpcoming && (
+                    <span className="relative flex h-2 w-2 shrink-0">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+                    </span>
+                  )}
+                  <p className="text-xs text-black/50">
+                    {formatTanggal(item.tanggal_kegiatan)} •{" "}
+                    {item.waktu_kegiatan}
+                  </p>
+                </div>
+              </motion.div>
+            );
+          })
         ) : (
           <p className="rounded-2xl bg-black/[0.03] p-4 text-sm text-black/50">
             Belum ada kegiatan.

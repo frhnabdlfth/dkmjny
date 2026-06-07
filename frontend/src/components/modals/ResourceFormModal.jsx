@@ -14,6 +14,7 @@ const ResourceFormModal = memo(function ResourceFormModal({
   loading = false,
 }) {
   const [form, setForm] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const base = Object.fromEntries(
@@ -80,6 +81,7 @@ const ResourceFormModal = memo(function ResourceFormModal({
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setSubmitting(true);
 
     try {
       const hasFile = fields.some((f) => f.type === "file");
@@ -114,11 +116,17 @@ const ResourceFormModal = memo(function ResourceFormModal({
           error?.message ||
           "Gagal menyimpan data",
       );
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <Modal open={open} title={title} onClose={onClose}>
+    <Modal
+      open={open}
+      title={title}
+      onClose={submitting || loading ? undefined : onClose}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         {visibleFields.map((field) => {
           const value = form[field.name] ?? "";
@@ -214,12 +222,21 @@ const ResourceFormModal = memo(function ResourceFormModal({
         })}
 
         <div className="flex flex-col-reverse gap-2 pt-3 sm:flex-row sm:justify-end">
-          <button type="button" onClick={onClose} className="btn-ghost">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting || loading}
+            className="btn-ghost"
+          >
             Batal
           </button>
 
-          <button type="submit" disabled={loading} className="btn-primary">
-            {loading ? "Menyimpan..." : "Simpan"}
+          <button
+            type="submit"
+            disabled={submitting || loading}
+            className="btn-primary"
+          >
+            {submitting || loading ? "Menyimpan..." : "Simpan"}
           </button>
         </div>
       </form>

@@ -15,7 +15,7 @@ import toast from "react-hot-toast";
 
 const pageMeta = {
   "/dashboard": {
-    title: "Welcome back, Admin 👋",
+    title: "Ahlan wa sahlan 👋",
     subtitle: "Dashboard manajemen DKMJNY",
   },
   "/keuangan": {
@@ -64,10 +64,22 @@ export default function AppShell() {
     password_confirmation: "",
   });
 
-  const meta = useMemo(
-    () => pageMeta[location.pathname] ?? pageMeta["/dashboard"],
-    [location.pathname],
-  );
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+
+  const meta = useMemo(() => {
+    const currentMeta = pageMeta[location.pathname] ?? pageMeta["/dashboard"];
+
+    if (location.pathname === "/dashboard") {
+      return {
+        ...currentMeta,
+        title: `Ahlan wa sahlan, ${currentUser?.username || "Admin"} 👋`,
+      };
+    }
+
+    return currentMeta;
+  }, [location.pathname, currentUser]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -106,6 +118,7 @@ export default function AppShell() {
 
       toast.success("Akun berhasil diperbarui");
       setAccountModal(false);
+      loadUserProfile();
     } catch (err) {
       toast.error(err.response?.data?.detail || "Gagal memperbarui akun");
     } finally {
@@ -137,11 +150,17 @@ export default function AppShell() {
 
       <div
         className={[
-          "flex min-h-screen w-full min-w-0 flex-col transition-[padding] duration-300 ease-in-out",
+          "flex min-h-screen w-full min-w-0 flex-col transition-[padding] duration-300 ease-in-out pt-20",
           sidebarOpen ? "lg:pl-[280px]" : "lg:pl-[88px]",
         ].join(" ")}
       >
-        <header className="sticky top-0 z-30 border-b border-black/5 bg-gray-100/90 backdrop-blur-xl">
+        <header
+          className={[
+            "fixed top-0 right-0 z-30 border-b border-black/5 bg-gray-100/50 backdrop-blur-xl",
+            "left-0 transition-[left] duration-300 ease-in-out",
+            sidebarOpen ? "lg:left-[280px]" : "lg:left-[88px]",
+          ].join(" ")}
+        >
           <div className="flex min-h-20 w-full items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
             <div className="flex min-w-0 items-center gap-3">
               <button
@@ -180,9 +199,10 @@ export default function AppShell() {
               <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-limey to-pink-200 font-black shadow-sm"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-limey to-pink-200 font-black shadow-sm uppercase"
                 >
-                  A
+                  {/* Sekalian dibikin dinamis: Inisial huruf pertama dari username */}
+                  {currentUser?.username ? currentUser.username.charAt(0) : "A"}
                 </button>
 
                 {profileOpen && (
@@ -190,9 +210,6 @@ export default function AppShell() {
                     <button
                       onClick={async () => {
                         setProfileOpen(false);
-
-                        await loadUserProfile();
-
                         setAccountModal(true);
                       }}
                       className="flex w-full items-center gap-3 px-4 py-3 text-sm hover:bg-gray-100"
@@ -220,10 +237,11 @@ export default function AppShell() {
 
         <main className="flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
           <div className="w-full max-w-none">
-            <Outlet />
+            <Outlet context={{ currentUser }} />
           </div>
         </main>
       </div>
+
       <AnimatePresence>
         {logoutModal && (
           <motion.div
