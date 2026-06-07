@@ -39,7 +39,7 @@ export default function Sidebar({ isOpen, isMobileOpen, onCloseMobile }) {
           ].join(" ")}
         >
           <div className="flex h-11 w-11 shrink-0 items-center">
-            <img src="../../public/dkmjny.webp" alt="Logo" />
+            <img src="/dkmjny.webp" alt="Logo" />
           </div>
 
           <div className={["min-w-0", !isOpen ? "lg:hidden" : ""].join(" ")}>
