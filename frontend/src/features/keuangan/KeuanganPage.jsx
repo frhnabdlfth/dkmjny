@@ -14,7 +14,7 @@ const money = (v) =>
 const renderTransaksi = (r) => {
   if (r.pemasukan && r.pemasukan > 0) {
     return (
-      <span className="font-bold text-limey">
+      <span className="font-bold text-green-700">
         +{money(r.pemasukan)}
       </span>
     );
