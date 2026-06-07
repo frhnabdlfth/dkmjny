@@ -18,6 +18,9 @@ export default function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [accountModal, setAccountModal] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(true);
+
 
   const [form, setForm] = useState({
     username: "",
@@ -79,9 +82,6 @@ export default function AppShell() {
     logout();
     navigate("/login", { replace: true });
   };
-
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-const [showInstallBanner, setShowInstallBanner] = useState(false);
 
 useEffect(() => {
   const handler = (e) => {
