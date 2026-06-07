@@ -13,37 +13,6 @@ import { logout } from "../../lib/auth";
 import { api } from "../../lib/api";
 import toast from "react-hot-toast";
 
-const pageMeta = {
-  "/dashboard": {
-    title: "Ahlan wa sahlan 👋",
-    subtitle: "Dashboard manajemen DKMJNY",
-  },
-  "/keuangan": {
-    title: "Keuangan",
-    subtitle: "Kelola pemasukan, pengeluaran, dan saldo akhir.",
-  },
-  "/sarpras": {
-    title: "Sarpras",
-    subtitle: "Kelola inventaris dan kondisi barang masjid.",
-  },
-  "/jadwal-dkm": {
-    title: "Jadwal DKM",
-    subtitle: "Kelola imam, khatib, dan muadzin.",
-  },
-  "/proker-dkm": {
-    title: "Proker DKM",
-    subtitle: "Kelola program kerja dan agenda kegiatan masjid.",
-  },
-  "/renovasi": {
-    title: "Renovasi",
-    subtitle: "Pantau progress perbaikan dan renovasi.",
-  },
-  "/backup": {
-    title: "Backup",
-    subtitle: "Backup dan kelola arsip database.",
-  },
-};
-
 export default function AppShell() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -67,19 +36,6 @@ export default function AppShell() {
   useEffect(() => {
     loadUserProfile();
   }, []);
-
-  const meta = useMemo(() => {
-    const currentMeta = pageMeta[location.pathname] ?? pageMeta["/dashboard"];
-
-    if (location.pathname === "/dashboard") {
-      return {
-        ...currentMeta,
-        title: `Ahlan wa sahlan, ${currentUser?.username || "Admin"} 👋`,
-      };
-    }
-
-    return currentMeta;
-  }, [location.pathname, currentUser]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -187,11 +143,8 @@ export default function AppShell() {
 
               <div className="min-w-0">
                 <h1 className="truncate text-xl font-black leading-tight sm:text-2xl">
-                  {meta.title}
+                   {`Ahlan wa sahlan, ${currentUser?.username || "Admin"} 👋`}
                 </h1>
-                <p className="truncate text-xs text-muted sm:text-sm">
-                  {meta.subtitle}
-                </p>
               </div>
             </div>
 
