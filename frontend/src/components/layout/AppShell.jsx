@@ -112,7 +112,7 @@ const handleInstall = async () => {
       {showInstallBanner && (
   <div className="fixed top-0 left-0 right-0 z-50 flex h-12 items-center justify-between gap-3 bg-gradient-to-r from-limey to-emerald-400 px-4 sm:px-6 lg:px-8">
     <div className="flex min-w-0 items-center gap-2.5">
-      <span className="shrink-0 text-lg">🕌</span>
+      <img src="/dkmjny.webp" alt="logo" className="w-6 h-6" />
       <p className="truncate text-sm font-semibold text-gray-900">
         <span className="hidden sm:inline">Kelola masjid lebih mudah — </span>
         Install aplikasi DKMJNY di perangkat Anda!
