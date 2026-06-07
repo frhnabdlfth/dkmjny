@@ -19,7 +19,7 @@ export default function AppShell() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [accountModal, setAccountModal] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showInstallBanner, setShowInstallBanner] = useState(true);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
 
 
   const [form, setForm] = useState({
