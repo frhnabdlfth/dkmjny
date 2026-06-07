@@ -80,7 +80,7 @@ export default function KeuanganPage() {
       {
         key: "pemasukan",
         label: "Pemasukan",
-        render: (r) => formatTanggal(r.tanggal),
+        render: (r) => money(r.pemasukan),
       },
       {
         key: "pengeluaran",
