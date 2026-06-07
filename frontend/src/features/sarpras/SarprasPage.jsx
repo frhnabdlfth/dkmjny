@@ -12,7 +12,7 @@ export default function SarprasPage() {
     if (!file) return null;
     if (file.startsWith("http")) return file;
 
-    const baseUrl = import.meta.env.VITE_API_URL.replace("/api", "");
+    const baseUrl = import.meta.env.VITE_API_URL.replace(/\/api$/, "");
 
     const cleaned = file
       .replace(/^storage\//, "")
