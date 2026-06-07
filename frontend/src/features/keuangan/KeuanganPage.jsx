@@ -11,6 +11,24 @@ const money = (v) =>
     maximumFractionDigits: 0,
   }).format(v || 0);
 
+const renderTransaksi = (r) => {
+  if (r.pemasukan && r.pemasukan > 0) {
+    return (
+      <span className="font-bold text-limey">
+        +{money(r.pemasukan)}
+      </span>
+    );
+  }
+  if (r.pengeluaran && r.pengeluaran > 0) {
+    return (
+      <span className="font-bold text-red-800">
+        -{money(r.pengeluaran)}
+      </span>
+    );
+  }
+  return "-";
+};
+
 function SummaryCard({ title, amount, color }) {
   return (
     <div className={`${color} rounded-xl p-4 sm:p-6 text-white`}>
@@ -25,13 +43,9 @@ export default function KeuanganPage() {
   const [typeSelectionOpen, setTypeSelectionOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const resourcePageRef = useRef(null);
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("");
-  const [sort, setSort] = useState("desc");
 
   const formatTanggal = (tanggal) => {
     if (!tanggal) return "-";
-
     return new Intl.DateTimeFormat("id-ID", {
       day: "numeric",
       month: "long",
@@ -47,14 +61,9 @@ export default function KeuanganPage() {
         render: (r) => formatTanggal(r.tanggal),
       },
       {
-        key: "pemasukan",
-        label: "Pemasukan",
-        render: (r) => money(r.pemasukan),
-      },
-      {
-        key: "pengeluaran",
-        label: "Pengeluaran",
-        render: (r) => money(r.pengeluaran),
+        key: "transaksi",
+        label: "Transaksi",
+        render: renderTransaksi,
       },
       {
         key: "jenis",
@@ -78,14 +87,9 @@ export default function KeuanganPage() {
         render: (r) => formatTanggal(r.tanggal),
       },
       {
-        key: "pemasukan",
-        label: "Pemasukan",
-        render: (r) => money(r.pemasukan),
-      },
-      {
-        key: "pengeluaran",
-        label: "Pengeluaran",
-        render: (r) => money(r.pengeluaran),
+        key: "transaksi",
+        label: "Transaksi",
+        render: renderTransaksi,
       },
     ];
 
@@ -115,148 +119,58 @@ export default function KeuanganPage() {
   const fields = useMemo(() => {
     if (tipeTransaksi === "Pemasukan") {
       return [
-        {
-          name: "user_id",
-          label: "User ID",
-          type: "number",
-          defaultValue: 1,
-          required: true,
-        },
-        {
-          name: "pemasukan",
-          label: "Pemasukan",
-          type: "number",
-          defaultValue: 0,
-          required: true,
-        },
-        {
-          name: "jenis_pemasukan",
-          label: "Jenis",
-          type: "select",
-          options: jenisPemasukan,
-          defaultValue: "",
-        },
+        { name: "user_id", label: "User ID", type: "number", defaultValue: 1, required: true },
+        { name: "pemasukan", label: "Pemasukan", type: "number", defaultValue: 0, required: true },
+        { name: "jenis_pemasukan", label: "Jenis", type: "select", options: jenisPemasukan, defaultValue: "" },
         { name: "tanggal", label: "Tanggal", type: "date", required: true },
         { name: "deskripsi", label: "Deskripsi", required: false },
-        {
-          name: "pengeluaran",
-          label: "Pengeluaran",
-          type: "number",
-          defaultValue: 0,
-          hidden: true,
-        },
-        {
-          name: "jenis_pengeluaran",
-          label: "Jenis Pengeluaran",
-          defaultValue: "",
-          hidden: true,
-        },
+        { name: "pengeluaran", label: "Pengeluaran", type: "number", defaultValue: 0, hidden: true },
+        { name: "jenis_pengeluaran", label: "Jenis Pengeluaran", defaultValue: "", hidden: true },
       ];
     } else if (tipeTransaksi === "Pengeluaran") {
       return [
-        {
-          name: "user_id",
-          label: "User ID",
-          type: "number",
-          defaultValue: 1,
-          required: true,
-        },
-        {
-          name: "pengeluaran",
-          label: "Pengeluaran",
-          type: "number",
-          defaultValue: 0,
-          required: true,
-        },
-        {
-          name: "jenis_pengeluaran",
-          label: "Jenis",
-          type: "select",
-          options: jenisPengeluaran,
-          defaultValue: "",
-        },
+        { name: "user_id", label: "User ID", type: "number", defaultValue: 1, required: true },
+        { name: "pengeluaran", label: "Pengeluaran", type: "number", defaultValue: 0, required: true },
+        { name: "jenis_pengeluaran", label: "Jenis", type: "select", options: jenisPengeluaran, defaultValue: "" },
         { name: "tanggal", label: "Tanggal", type: "date", required: true },
         { name: "deskripsi", label: "Deskripsi", required: false },
-        {
-          name: "pemasukan",
-          label: "Pemasukan",
-          type: "number",
-          defaultValue: 0,
-          hidden: true,
-        },
-        {
-          name: "jenis_pemasukan",
-          label: "Jenis Pemasukan",
-          defaultValue: "",
-          hidden: true,
-        },
+        { name: "pemasukan", label: "Pemasukan", type: "number", defaultValue: 0, hidden: true },
+        { name: "jenis_pemasukan", label: "Jenis Pemasukan", defaultValue: "", hidden: true },
       ];
     }
     return [];
   }, [tipeTransaksi]);
 
   const renderHeader = (items) => {
-    const totalPemasukan = items.reduce(
-      (sum, item) => sum + (item.pemasukan || 0),
-      0,
-    );
-    const totalPengeluaran = items.reduce(
-      (sum, item) => sum + (item.pengeluaran || 0),
-      0,
-    );
+    const totalPemasukan = items.reduce((sum, item) => sum + (item.pemasukan || 0), 0);
+    const totalPengeluaran = items.reduce((sum, item) => sum + (item.pengeluaran || 0), 0);
     const sisaSaldo = totalPemasukan - totalPengeluaran;
 
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6">
-        <SummaryCard
-          title="Saldo Pemasukan"
-          amount={totalPemasukan}
-          color="bg-green-700"
-        />
-        <SummaryCard
-          title="Saldo Pengeluaran"
-          amount={totalPengeluaran}
-          color="bg-red-800"
-        />
-        <SummaryCard
-          title="Sisa Saldo"
-          amount={sisaSaldo}
-          color={sisaSaldo >= 0 ? "bg-blue-500" : "bg-orange-500"}
-        />
+        <SummaryCard title="Saldo Pemasukan" amount={totalPemasukan} color="bg-green-700" />
+        <SummaryCard title="Saldo Pengeluaran" amount={totalPengeluaran} color="bg-red-800" />
+        <SummaryCard title="Sisa Saldo" amount={sisaSaldo} color={sisaSaldo >= 0 ? "bg-blue-500" : "bg-orange-500"} />
       </div>
     );
   };
 
-  const handleBeforeCreate = () => {
-    setTypeSelectionOpen(true);
-  };
+  const handleBeforeCreate = () => setTypeSelectionOpen(true);
 
   const handleBeforeEdit = (row) => {
     setEditData(row);
-    const type =
-      row.jenis_pemasukan && row.jenis_pemasukan.trim() !== ""
-        ? "Pemasukan"
-        : "Pengeluaran";
+    const type = row.jenis_pemasukan && row.jenis_pemasukan.trim() !== "" ? "Pemasukan" : "Pengeluaran";
     setTipeTransaksi(type);
-
     if (resourcePageRef.current?.openForm) {
-      setTimeout(() => {
-        resourcePageRef.current.openForm(row);
-      }, 0);
+      setTimeout(() => resourcePageRef.current.openForm(row), 0);
     }
   };
 
   const handleBeforeView = (row) => {
-    const type =
-      row.jenis_pemasukan && row.jenis_pemasukan.trim() !== ""
-        ? "Pemasukan"
-        : "Pengeluaran";
+    const type = row.jenis_pemasukan && row.jenis_pemasukan.trim() !== "" ? "Pemasukan" : "Pengeluaran";
     setTipeTransaksi(type);
-
     if (resourcePageRef.current?.openView) {
-      setTimeout(() => {
-        resourcePageRef.current.openView(row);
-      }, 0);
+      setTimeout(() => resourcePageRef.current.openView(row), 0);
     }
   };
 
@@ -264,9 +178,7 @@ export default function KeuanganPage() {
     setTipeTransaksi(type);
     setTypeSelectionOpen(false);
     if (resourcePageRef.current?.openForm) {
-      setTimeout(() => {
-        resourcePageRef.current.openForm();
-      }, 0);
+      setTimeout(() => resourcePageRef.current.openForm(), 0);
     }
   };
 
@@ -319,20 +231,14 @@ export default function KeuanganPage() {
         onClose={() => setTypeSelectionOpen(false)}
       >
         <div className="space-y-3">
-          <button
-            onClick={() => handleTypeSelected("Pemasukan")}
-            className="w-full btn-primary py-3"
-          >
+          <button onClick={() => handleTypeSelected("Pemasukan")} className="w-full btn-primary py-3">
             Pemasukan
           </button>
-          <button
-            onClick={() => handleTypeSelected("Pengeluaran")}
-            className="w-full btn-secondary py-3"
-          >
+          <button onClick={() => handleTypeSelected("Pengeluaran")} className="w-full btn-secondary py-3">
             Pengeluaran
           </button>
         </div>
       </Modal>
     </>
   );
-}
+        }
