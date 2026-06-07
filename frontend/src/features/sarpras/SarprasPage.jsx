@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import ResourcePage from "../ResourcePage";
 
 export default function SarprasPage() {
@@ -11,12 +12,14 @@ export default function SarprasPage() {
     if (!file) return null;
     if (file.startsWith("http")) return file;
 
+    const baseUrl = import.meta.env.VITE_API_URL.replace("/api", "");
+
     const cleaned = file
       .replace(/^storage\//, "")
       .replace(/^image\//, "")
       .replace(/^\//, "");
 
-    return `http://localhost:8000/storage/image/${cleaned}`;
+    return `${baseUrl}/storage/image/${cleaned}`;
   };
 
   const kondisiBadge = {
@@ -102,29 +105,42 @@ export default function SarprasPage() {
         ]}
       />
 
-      {previewFoto && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-          onClick={() => setPreviewFoto(null)}
-        >
-          <div
-            className="relative bg-white rounded-xl p-4 max-w-md w-[90%]"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {previewFoto && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+            onClick={() => setPreviewFoto(null)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
           >
-            <button
-              onClick={() => setPreviewFoto(null)}
-              className="absolute top-3 right-3 text-black/40 hover:text-black/70"
+            <motion.div
+              className="relative bg-white rounded-xl p-4 max-w-md w-[90%]"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.85, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.85, y: 20 }}
+              transition={{ type: "spring", duration: 0.35, bounce: 0.3 }}
             >
-              ✕
-            </button>
-            <p className="text-sm font-bold mb-3">Preview Foto</p>
-            <img
-              src={previewFoto}
-              className="w-full rounded-lg object-contain max-h-80"
-            />
-          </div>
-        </div>
-      )}
+              <button
+                onClick={() => setPreviewFoto(null)}
+                className="absolute top-3 right-3 text-black/40 hover:text-black/70"
+              >
+                ✕
+              </button>
+              <p className="text-sm font-bold mb-3">Preview Foto</p>
+              <motion.img
+                src={previewFoto}
+                className="w-full rounded-lg object-contain max-h-80"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.15 }}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

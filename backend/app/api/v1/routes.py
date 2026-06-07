@@ -1,3 +1,6 @@
+import os
+import glob
+from fastapi.responses import FileResponse
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -30,7 +33,9 @@ from app.services import backup as backup_service
 from app.services import crud
 from app.services.dashboard import get_dashboard_summary
 from app.services.auth import authenticate_user, create_access_token, get_current_user, hash_password
+from app.core.config import get_settings
 
+settings = get_settings()
 
 router = APIRouter(prefix="/api")
 
@@ -201,6 +206,33 @@ def delete_backup(item_id: int, db: Session = Depends(get_db), current_user: Use
     item = crud.get_item(db, Backup, item_id)
     backup_service.delete_backup_file(db, item)
     return {"message": "Backup berhasil dihapus"}
+    
+import glob
+from fastapi.responses import FileResponse
+
+
+@router.get("/backup/{item_id}/download")
+def download_backup(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    item = crud.get_item(db, Backup, item_id)
+
+    pattern = os.path.join(
+        settings.backup_dir,
+        f"{item.db}_{item.tanggal.strftime('%Y%m%d')}_*.sql",
+    )
+    files = glob.glob(pattern)
+
+    if not files:
+        raise HTTPException(status_code=404, detail="File backup tidak ditemukan")
+
+    return FileResponse(
+        path=sorted(files)[-1],
+        filename=os.path.basename(sorted(files)[-1]),
+        media_type="application/octet-stream",
+    )
 
 
 @router.get("/sarpras", response_model=list[SarprasRead])

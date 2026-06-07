@@ -19,6 +19,6 @@ COPY app/ ./app/
 # Create storage directories
 RUN mkdir -p storage/backups storage/image
 
-EXPOSE 8000
+EXPOSE 8888
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8888"]
